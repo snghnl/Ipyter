@@ -1,0 +1,5 @@
+# dune init proj PyTER
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Workspace root: /mnt/c/ubuntu_data/PyTER
+# Auto-detected concurrency: 8
