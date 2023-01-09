@@ -1,4 +1,7 @@
 (executable
  (public_name PyTER)
  (name main)
- (libraries PyTER))
+ (libraries
+	PyTER.pycaml
+	PyTER.lib
+))

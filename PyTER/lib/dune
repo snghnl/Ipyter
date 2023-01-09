@@ -1,2 +1,4 @@
 (library
- (name PyTER))
+  (name lib)
+  (public_name PyTER.lib)
+  (libraries PyTER.pycaml base stdio core batteries z3))

@@ -1,6 +1,6 @@
 (library
- (name lib) 
- (public_name pyter.lib)
+ (name pycaml) 
+ (public_name PyTER.pycaml)
  (libraries base stdio yojson core batteries))
 
 

@@ -19,7 +19,11 @@
  (name PyTER)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends 
+  (PyTER.lib :build)
+  (PyTER.pycaml :build)
+  (dune :build)
+  (core :build))
  (tags
   (topics "to describe" your project)))
 
