@@ -1,0 +1,18 @@
+package "lib" (
+  directory = "lib"
+  description = ""
+  requires = "PyTER.pycaml base core stdio"
+  archive(byte) = "lib.cma"
+  archive(native) = "lib.cmxa"
+  plugin(byte) = "lib.cma"
+  plugin(native) = "lib.cmxs"
+)
+package "pycaml" (
+  directory = "pycaml"
+  description = ""
+  requires = "base batteries core stdio yojson"
+  archive(byte) = "pycaml.cma"
+  archive(native) = "pycaml.cmxa"
+  plugin(byte) = "pycaml.cma"
+  plugin(native) = "pycaml.cmxs"
+)

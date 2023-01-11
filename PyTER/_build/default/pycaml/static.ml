@@ -1,8 +1,25 @@
 open Ast
-open Util
 open Base
 
+type var_type = 
+| VInt
+| VFloat
+| VString 
+| VBool
+| VNone
+| VEllipsis 
 
+
+
+let const2type: constant -> var_type
+= fun const ->
+  match const with 
+  | CInt _ -> VInt 
+  | CFloat _ -> VFloat
+  | CString _ -> VString
+  | CBool _ -> VBool
+  | CNone -> VNone
+  | CEllipsis -> VEllipsis  
 
 (* ************************ *)
 (* Module: Type Constraints *)
@@ -20,13 +37,6 @@ end
 (* *************************** *)
 
 
-module CandVars = struct
-
-  type t = identifier * (constant list) list 
-  (* json2list: convert the result of dynamic analysis to (identifier * (constant list) list) *)
-  (* let rec json2list TODO *)
-
-end 
 
 
 
@@ -35,7 +45,7 @@ end
 (* Module: Type Environment Map *)
 (* **************************** *)
 
-module TEnvMap = struct 
+module Var2valMap = struct 
   type t = identifier
   type comparator_witness
 
@@ -43,8 +53,14 @@ module TEnvMap = struct
 end 
  
 
+module Dynamic = struct
+  type var = identifier
+  type candVars = var list
+  type posType = candVars Map.M (Var2valMap).t
+  (* json2list: convert the result of dynamic analysis to (identifier * (constant list) list) *)
+  (* let rec json2list TODO *)
 
-
+end 
 
 
 (* ************************ *)
@@ -53,14 +69,20 @@ end
 
 module TEnv = struct
   type var = identifier
-  type value = constant list
-  type tEnv = value Map.M (TEnvMap).t
+  type value = var_type list 
+  type tEnv = value Map.M (Var2valMap).t
 
+ (* Λ^init in PyTER *)
+ (* init_tEnv: function initializing type envrionment for static analysis *)
   let rec init_tEnv : var -> tEnv -> tEnv
-  = fun var tenv -> Map.set tenv ~key:var ~data:[]
+  = fun var tenv -> Map.set tenv ~key:var ~data: []
 
+  (* generate_tCon_stmts: constraints generating function for statements *)
  and generate_tCon_stmtS : stmt list -> TCon.t
   = fun stmtS -> List.fold_left ~init:[] ~f: (fun acc x -> ((generate_tCon_stmt x) @ acc)) stmtS
+  
+  
+  (* generate_tCon_stmt: function generating constraints for statement *)
   and generate_tCon_stmt : stmt -> TCon.t
   = fun stmt -> 
     match stmt with
@@ -122,7 +144,7 @@ module TEnv = struct
     (* | Continue of { attrs: attributes } *)
     | Continue _ -> []
 
-
+(* generate_tCon_expr: function generating constraints for expression *)
   and generate_tCon_expr : expr -> TCon.t
   = fun expr ->
       match expr with 
@@ -196,31 +218,52 @@ module TEnv = struct
 
 
 
-   (* and updating_tenv : TCon.t -> tEnv -> tEnv
-      = fun tcon tenv -> 
+   (* Φ in PyTER *)  
+   (* updating_tEnv: function that infers type of buggy variable with the information of constarints(i.e. TCon.t) *)
+   and updating_tEnv : var -> TCon.t -> tEnv -> tEnv
+      = fun var tcon tenv -> 
         match tcon with 
         | [] -> tenv
         | hd :: tl -> 
           begin 
             match hd with 
             | Name x, Name y ->
+               if String.equal x.id var && String.equal y.id var then updating_tEnv var tl tenv
+               else if String.equal x.id var then Map.update tenv var ~f:(fun values -> Option.value ~default: [] values @ Map.find_exn tenv x.id)
+               else if String.equal y.id var then Map.update tenv var ~f:(fun values -> Option.value ~default: [] values @ Map.find_exn tenv y.id)
+               else updating_tEnv var tl tenv
             | Name x, Constant y -> 
+              if String.equal x.id var then Map.update tenv var ~f:(fun values -> (const2type y.value :: Option.value ~default:[] values))
+              else updating_tEnv var tl tenv 
             | Constant x, Name y -> 
-            | _ -> updating_tenv tl tenv
-          end  *)
+              if String.equal y.id var then Map.update tenv var ~f:(fun values -> (const2type x.value :: Option.value ~default:[] values))
+              else updating_tEnv var tl tenv
+            | _ -> updating_tEnv var tl tenv
+          end 
+ 
+(* dom_type: function that returns mode type in var_type list *)
+  and dom_type : value -> value
+  = fun values -> 
+    let types = [VInt ; VBool ; VString ; VFloat] in let ordered = List.map ~f:(fun x -> (x, count_values x values)) types
+    |> List.sort ~compare: (fun (_, a) (_, b) -> a-b) in let max = match List.hd ordered with Some (_ ,num) -> num | None -> -1 in List.filter ~f: (fun(_,a) -> a = max) ordered
+    |> List.map ~f: (fun (a, _) -> a)
+
+
+(* used in dom_type *)
+(* count_values: function counting the number of certain type "value" *)
+  and count_values : var_type -> value -> int
+  = fun value values -> let is_type = is_type value in List.fold_left ~init:0 ~f: (fun acc x -> is_type x + acc) values
+
+  (* used in count_values *)
+  (* is_type: function comparing value and target; if same return 1 else 0 *)
+  and is_type : var_type -> var_type -> int 
+  = fun value target -> if phys_equal value target then 1 else 0
 
 
 
-    (* and lookup_tenv : tEnv -> constant list list
-      = fun tenv ->  *)
+  
+  
     
-
-    
-  (* and infer : var -> TCon.t -> tEnv -> var * value list *)
-  (* = fun var tcon tenv -> 
-    match tcon with  *)
-    (* | *)
-
 end   
 
 (* 

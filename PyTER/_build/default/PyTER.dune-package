@@ -1,0 +1,91 @@
+(lang dune 3.6)
+(name PyTER)
+(sections (lib .) (libexec .) (bin ../../bin))
+(files
+ (lib
+  (META
+   dune-package
+   lib/lib.a
+   lib/lib.cma
+   lib/lib.cmi
+   lib/lib.cmt
+   lib/lib.cmx
+   lib/lib.cmxa
+   lib/lib.ml
+   opam
+   pycaml/ast.ml
+   pycaml/ast2string.ml
+   pycaml/json2ast.ml
+   pycaml/pycaml.a
+   pycaml/pycaml.cma
+   pycaml/pycaml.cmi
+   pycaml/pycaml.cmt
+   pycaml/pycaml.cmx
+   pycaml/pycaml.cmxa
+   pycaml/pycaml.ml
+   pycaml/pycaml__Ast.cmi
+   pycaml/pycaml__Ast.cmt
+   pycaml/pycaml__Ast.cmx
+   pycaml/pycaml__Ast2string.cmi
+   pycaml/pycaml__Ast2string.cmt
+   pycaml/pycaml__Ast2string.cmx
+   pycaml/pycaml__Json2ast.cmi
+   pycaml/pycaml__Json2ast.cmt
+   pycaml/pycaml__Json2ast.cmx
+   pycaml/pycaml__Static.cmi
+   pycaml/pycaml__Static.cmt
+   pycaml/pycaml__Static.cmx
+   pycaml/pycaml__Util.cmi
+   pycaml/pycaml__Util.cmt
+   pycaml/pycaml__Util.cmx
+   pycaml/static.ml
+   pycaml/util.ml))
+ (libexec (lib/lib.cmxs pycaml/pycaml.cmxs))
+ (bin (PyTER)))
+(library
+ (name PyTER.lib)
+ (kind normal)
+ (archives (byte lib/lib.cma) (native lib/lib.cmxa))
+ (plugins (byte lib/lib.cma) (native lib/lib.cmxs))
+ (native_archives lib/lib.a)
+ (requires PyTER.pycaml base stdio core)
+ (main_module_name Lib)
+ (modes byte native)
+ (modules
+  (wrapped
+   (main_module_name Lib)
+   (alias_module
+    (name Lib)
+    (obj_name lib)
+    (visibility public)
+    (kind alias)
+    (impl))
+   (wrapped true))))
+(library
+ (name PyTER.pycaml)
+ (kind normal)
+ (archives (byte pycaml/pycaml.cma) (native pycaml/pycaml.cmxa))
+ (plugins (byte pycaml/pycaml.cma) (native pycaml/pycaml.cmxs))
+ (native_archives pycaml/pycaml.a)
+ (requires base stdio yojson core batteries)
+ (main_module_name Pycaml)
+ (modes byte native)
+ (modules
+  (wrapped
+   (main_module_name Pycaml)
+   (modules
+    ((name Ast) (obj_name pycaml__Ast) (visibility public) (impl))
+    ((name Ast2string)
+     (obj_name pycaml__Ast2string)
+     (visibility public)
+     (impl))
+    ((name Json2ast) (obj_name pycaml__Json2ast) (visibility public) (impl))
+    ((name Static) (obj_name pycaml__Static) (visibility public) (impl))
+    ((name Util) (obj_name pycaml__Util) (visibility public) (impl)))
+   (alias_module
+    (name Pycaml)
+    (obj_name pycaml)
+    (visibility public)
+    (kind alias)
+    (impl))
+   (wrapped true))))
