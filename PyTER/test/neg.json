@@ -1,0 +1,157 @@
+[
+    {
+        "idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "info": {
+            "funcname": "_validate_timedelta",
+            "filename": "/pandas/core/ops.py",
+            "classname": "_TimeOp._validate_timedelta",
+            "line": 431
+        },
+        "args": {
+            "name": [
+                "str"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "info": {
+            "funcname": "_validate",
+            "filename": "/pandas/core/ops.py",
+            "classname": "_TimeOp._validate",
+            "line": 470
+        },
+        "args": {
+            "name": [
+                "str"
+            ],
+            "self": [
+                "pandas.core.ops._TimeOp"
+            ],
+            "self._validate_timedelta": [
+                "method"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "info": {
+            "funcname": "__init__",
+            "filename": "/pandas/core/ops.py",
+            "classname": "_TimeOp.__init__",
+            "line": 386
+        },
+        "args": {
+            "name": [
+                "str"
+            ],
+            "self": [
+                "pandas.core.ops._TimeOp"
+            ],
+            "lvalues": [
+                "pandas.core.series.Series"
+            ],
+            "rvalues": [
+                "numpy.ndarray<<timedelta64>>"
+            ],
+            "self._validate": [
+                "method"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "info": {
+            "funcname": "get_op",
+            "filename": "/pandas/core/ops.py",
+            "classname": "get_op",
+            "line": 350
+        },
+        "args": {
+            "na_op": [
+                "function"
+            ],
+            "name": [
+                "str"
+            ],
+            "right": [
+                "pandas._libs.tslibs.timedeltas.Timedelta",
+                "numpy.timedelta64",
+                "datetime.timedelta"
+            ],
+            "left": [
+                "pandas.core.series.Series"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "info": {
+            "funcname": "wrapper",
+            "filename": "/pandas/core/ops.py",
+            "classname": "wrapper",
+            "line": 746
+        },
+        "args": {
+            "na_op": [
+                "function"
+            ],
+            "name": [
+                "str"
+            ],
+            "right": [
+                "pandas._libs.tslibs.timedeltas.Timedelta",
+                "numpy.timedelta64",
+                "datetime.timedelta"
+            ],
+            "left": [
+                "pandas.core.series.Series"
+            ]
+        }
+    }
+]
