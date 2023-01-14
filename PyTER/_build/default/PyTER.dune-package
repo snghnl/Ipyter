@@ -15,6 +15,7 @@
    opam
    pycaml/ast.ml
    pycaml/ast2string.ml
+   pycaml/flocal.ml
    pycaml/json2ast.ml
    pycaml/pycaml.a
    pycaml/pycaml.cma
@@ -29,6 +30,9 @@
    pycaml/pycaml__Ast2string.cmi
    pycaml/pycaml__Ast2string.cmt
    pycaml/pycaml__Ast2string.cmx
+   pycaml/pycaml__Flocal.cmi
+   pycaml/pycaml__Flocal.cmt
+   pycaml/pycaml__Flocal.cmx
    pycaml/pycaml__Json2ast.cmi
    pycaml/pycaml__Json2ast.cmt
    pycaml/pycaml__Json2ast.cmx
@@ -79,6 +83,7 @@
      (obj_name pycaml__Ast2string)
      (visibility public)
      (impl))
+    ((name Flocal) (obj_name pycaml__Flocal) (visibility public) (impl))
     ((name Json2ast) (obj_name pycaml__Json2ast) (visibility public) (impl))
     ((name Static) (obj_name pycaml__Static) (visibility public) (impl))
     ((name Util) (obj_name pycaml__Util) (visibility public) (impl)))
