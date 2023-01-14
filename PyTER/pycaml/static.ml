@@ -160,10 +160,16 @@ module Print = struct
 
 end
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> ef374b6d80ed0db7b26a22f292cc0240d4706a31
 (* ************************ *)
 (* Module: Type Constraints *)
 (* ************************ *)
 
+<<<<<<< HEAD
 module TCon = struct
   type constraints = (expr * expr) list
 
@@ -203,6 +209,35 @@ module TCon = struct
       | _ -> false 
 
 
+=======
+
+
+module TEnv = struct
+  type var = identifier
+  type value = var_type list 
+  type tEnv = value Map.M (Var2valMap).t
+  type constraints = (expr * expr) list
+
+ (* Λ^{init} in PyTER *)
+ (* init_tEnv: function initializing type envrionment for static analysis *)
+  let rec init_tEnv : var -> Dynamic.posType -> tEnv
+  = fun var tenv -> Map.set tenv ~key:var ~data: []
+
+  and generate_tCon : tracebacks -> constraints
+  = fun tracebacks -> 
+      match tracebacks with 
+      | [] -> []
+      | Traceback x :: tl -> Stdlib.Sys.commnad "./traceback.sh " ^ x.filname 
+    (* TODO *)
+
+
+
+  (* = fun pgm -> 
+    match pgm with 
+    | Module x -> generate_tCon_stmtS x.body
+    | Expression x -> generate_tCon_expr x.body
+    | _ -> raise (Failure "not the program" ) *)
+>>>>>>> ef374b6d80ed0db7b26a22f292cc0240d4706a31
 
 
   (* generate_tCon_stmts: constraints generating function for statements *)
@@ -416,6 +451,11 @@ module TEnv = struct
 end   
 
 
+<<<<<<< HEAD
 let anal: Dynamic.tracebacks -> Dynamic.posType -> TEnv.tEnv
 = fun program pos -> Map.mapi pos ~f: (fun ~key:key ~data:_ -> ((TEnv.updating_tEnv key (TCon.generate_tCon program) (TEnv.init_tEnv key pos))
+=======
+let anal: pgm -> Dynamic.posType -> TEnv.tEnv
+= fun program pos -> Map.mapi pos ~f: (fun ~key:key ~data:_ -> ((TEnv.updating_tEnv key (TEnv.generate_tCon program) (TEnv.init_tEnv key pos))
+>>>>>>> ef374b6d80ed0db7b26a22f292cc0240d4706a31
 |> Map.find_exn) key |> TEnv.dom_type)
