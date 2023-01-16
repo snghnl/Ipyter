@@ -17,6 +17,7 @@
    pycaml/ast2string.ml
    pycaml/flocal.ml
    pycaml/json2ast.ml
+   pycaml/patch.ml
    pycaml/pycaml.a
    pycaml/pycaml.cma
    pycaml/pycaml.cmi
@@ -36,6 +37,9 @@
    pycaml/pycaml__Json2ast.cmi
    pycaml/pycaml__Json2ast.cmt
    pycaml/pycaml__Json2ast.cmx
+   pycaml/pycaml__Patch.cmi
+   pycaml/pycaml__Patch.cmt
+   pycaml/pycaml__Patch.cmx
    pycaml/pycaml__Static.cmi
    pycaml/pycaml__Static.cmt
    pycaml/pycaml__Static.cmx
@@ -85,6 +89,7 @@
      (impl))
     ((name Flocal) (obj_name pycaml__Flocal) (visibility public) (impl))
     ((name Json2ast) (obj_name pycaml__Json2ast) (visibility public) (impl))
+    ((name Patch) (obj_name pycaml__Patch) (visibility public) (impl))
     ((name Static) (obj_name pycaml__Static) (visibility public) (impl))
     ((name Util) (obj_name pycaml__Util) (visibility public) (impl)))
    (alias_module

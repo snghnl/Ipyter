@@ -12,6 +12,9 @@ module Flocal = Pycaml__Flocal
 (** @canonical Pycaml.Json2ast *)
 module Json2ast = Pycaml__Json2ast
 
+(** @canonical Pycaml.Patch *)
+module Patch = Pycaml__Patch
+
 (** @canonical Pycaml.Static *)
 module Static = Pycaml__Static
 

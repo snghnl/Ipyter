@@ -14,7 +14,7 @@ type var_type =
 | VNone
 | VEllipsis 
 
-(* const2type: function that convert constant type to var_type *)
+(* const2type: function tha constant type to var_type *)
 let const2type: constant -> var_type
 = fun const ->
   match const with 
@@ -64,7 +64,7 @@ end
 
 module Dynamic = struct
   type var = identifier
-  type candVars = var list
+  (* type candVars = var list *)
   type value = var_type list
   type posType = value Map.M (Var2valMap).t
   type traceback = Traceback of {filename: string ; classname: identifier ; funcname: identifier ; line: int ; args: posType} 
@@ -92,9 +92,9 @@ module Dynamic = struct
   let json2tracebacks : Yojson.Basic.t-> tracebacks
   = fun json -> to_list json |> List.map ~f: json2traceback
 
-  let tracebacks2candVars : tracebacks -> candVars
-  = fun tracebacks -> List.fold_left ~init:[] ~f:(fun acc (Traceback x) -> Map.keys x.args @ acc) tracebacks
 
+  (* let tracebacks2candvars : tracebacks -> candvars
+  = fun tracebacks -> List.fold_left ~init:[] ~f:(fun acc (Traceback x) -> Map.keys x.args @ acc) tracebacks *)
 
   let dynamicAnal : tracebacks -> posType
   = fun tracebacks -> List.map ~f: (fun (Traceback x) -> x.args) tracebacks 
@@ -134,11 +134,11 @@ module Print = struct
       end
 
 
-  let print_args : Dynamic.posType -> unit 
+  let print_args 
   = fun args -> 
     let alist = Map.to_alist args in 
     List.fold_left ~init:() ~f: (fun _ (key, value)-> Stdio.print_string key ; Stdio.print_string " " ; print_type value) alist ; Stdio.print_endline ""
-
+  
 
 
   let print_traceback : Dynamic.traceback -> unit
@@ -182,7 +182,7 @@ module TCon = struct
 
    and filename2pgm : identifier -> pgm 
    = fun filename -> 
-      let _ = Unix.open_process_in ("python3.10 ast2json.py " ^ filename ^ " > /tmp/traceback.json") in 
+      let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py /home/viselacity/data/pyter/pyter/test" ^ filename ^ " > /tmp/traceback.json") in 
         let json = Yojson.Basic.from_file "/tmp/traceback.json" in Json2ast.to_module json 
 
   and module2tracebacks : pgm -> identifier -> identifier -> stmt list 
@@ -364,11 +364,6 @@ module TEnv = struct
   = fun var tenv -> Map.set tenv ~key:var ~data: []
 
 
-
-
-
-
-
    (* Φ in PyTER *)  
    (* updating_tEnv: function that infers type of buggy variable with the information of constarints(i.e. constraints) *)
    and updating_tEnv : var -> TCon.constraints -> tEnv -> tEnv
@@ -397,15 +392,19 @@ module TEnv = struct
 (* dom_type: function that returns mode type in var_type list *)
   and dom_type : value -> value
   = fun values -> 
-    let types = [VInt ; VBool ; VString ; VFloat] in let ordered = List.map ~f:(fun x -> (x, count_values x values)) types
-    |> List.sort ~compare: (fun (_, a) (_, b) -> a-b) in let max = match List.hd ordered with Some (_ ,num) -> num | None -> -1 in List.filter ~f: (fun(_,a) -> a = max) ordered
+    let types = [VInt ; VBool ; VString ; VFloat] in 
+    let ordered = List.map ~f:(fun x -> (x, count_values x values)) types in
+    let ordered = List.sort ~compare: (fun (_, a) (_, b) -> a-b) ordered  |> List.rev in 
+    let max = match List.hd ordered with Some (_ ,num) -> num | None -> -1 in 
+    List.filter ~f: (fun(_,a) -> a = max) ordered
     |> List.map ~f: (fun (a, _) -> a)
 
 
 (* used in dom_type *)
 (* count_values: function counting the number of certain type "value" *)
   and count_values : var_type -> value -> int
-  = fun value values -> let is_type = is_type value in List.fold_left ~init:0 ~f: (fun acc x -> is_type x + acc) values
+  = fun value values -> let is_type = is_type value in 
+     List.fold_left ~init:0 ~f: (fun acc x -> is_type x + acc) values
 
 (* used in count_values *)
 (* is_type: function comparing value and target; if same return 1 else 0 *)
@@ -416,6 +415,14 @@ module TEnv = struct
 end   
 
 
-let anal: Dynamic.tracebacks -> Dynamic.posType -> TEnv.tEnv
-= fun program pos -> Map.mapi pos ~f: (fun ~key:key ~data:_ -> ((TEnv.updating_tEnv key (TCon.generate_tCon program) (TEnv.init_tEnv key pos))
-|> Map.find_exn) key |> TEnv.dom_type)
+let anal : Yojson.Basic.t -> TEnv.tEnv
+= fun dynamic -> 
+  let tracebacks = Dynamic.json2tracebacks dynamic in 
+  let postypes = Dynamic.dynamicAnal tracebacks in 
+  let constraints = TCon.generate_tCon tracebacks in
+  Map.mapi ~f: (fun ~key: var ~data: _ -> 
+    (TEnv.init_tEnv var postypes 
+  |> TEnv.updating_tEnv var constraints 
+  |> Map.find_exn) var
+  |> TEnv.dom_type) postypes
+  

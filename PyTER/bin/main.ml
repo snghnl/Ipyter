@@ -1,14 +1,23 @@
-open Pycaml
-open Static
-
-
-
+open Pycaml.Static
+(* open Pycaml.Ast *)
 
 
 let filename = Stdlib.Sys.argv.(1) 
-let json = Yojson.Basic.from_file filename;;
+let json = Yojson.Basic.from_file filename
 
-Dynamic.json2tracebacks json |> Print.print_tracebacks 
+let static = anal json 
+
+let () = Print.print_args static
+
+
+
+
+
+
+
+
+
+
 
 
 
