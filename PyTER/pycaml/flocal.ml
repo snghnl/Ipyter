@@ -17,14 +17,6 @@ open Util
 
 
 type delta = Delta of { traceback: Dynamic.traceback ; line: int ; postype: Dynamic.posType ; negtype : TEnv.tEnv }
-let type2string : var_type -> string
-= fun types -> 
-  match types with 
-  | VInt -> "int"
-  | VString -> "str"
-  | VFloat -> "float"
-  | VBool -> "bool"
-  | _ -> ""
 
 
 
@@ -49,7 +41,7 @@ module VarSet = struct
 
 module FuncLev = struct
   
-    type var = identifier 
+    type var = variable 
     type value = var_type list
     type dynamic = value Map.M (Var2valMap).t
     type static = value Map.M (Var2valMap).t
@@ -82,7 +74,6 @@ module FuncLev = struct
 end
 
 
-    
 
 
 
@@ -92,5 +83,18 @@ end
 (* ************ *)
 
 module SBFL = struct
-  
+
+type line_num = int
+type weight = float
+type weighted_path = (line_num * weight) list
+
+
+
+
+
+
+
+
+
+
 end

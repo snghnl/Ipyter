@@ -6,15 +6,26 @@ open Util
 
 type pgm = modul 
 
-type var_type = 
+(* member "alias" for differentiating same-named variables *)
+type variable = Var of { name : identifier ; alias: identifier ; meta: meta_data }
+
+and meta_data = Meta of {filename: identifier ; classname: identifier ; funcname: identifier }
+
+and var_type = 
 | VInt
 | VFloat
 | VString 
 | VBool
+| VDict
+| VList
+| VClass of string
+| VMethod
 | VNone
 | VEllipsis 
 
-(* const2type: function tha constant type to var_type *)
+
+
+(* const2type: function that constant type to var_type *)
 let const2type: constant -> var_type
 = fun const ->
   match const with 
@@ -33,7 +44,31 @@ and string2type : string -> var_type
   | "str" -> VString
   | "float" -> VFloat
   | "bool" -> VBool
-  | _ -> VNone
+  | "Dict" -> VDict
+  | "List" -> VList
+  | "method" -> VMethod
+  | x -> if Stdlib.String.starts_with ~prefix:"Dict" x then VDict else VClass x
+
+  and type2string : var_type -> string
+      = function 
+        | VInt -> "int"
+        | VFloat -> "float"
+        | VString -> "str"
+        | VBool -> "bool"
+        | VDict -> "Dict"
+        | VList -> "List"
+        | VClass x -> x
+        | VMethod -> "method"
+        | VNone -> "None"
+        | VEllipsis -> "..."
+let generate_varName : unit -> identifier
+= let varName_num = ref 0 in 
+   fun () -> (varName_num := !varName_num + 1 ; ("t" ^ Int.to_string !varName_num))
+
+
+
+
+
 
 
 (* **************************** *)
@@ -41,12 +76,17 @@ and string2type : string -> var_type
 (* **************************** *)
 
 
+
+
 module Var2valMap = struct 
   module T = struct
-    type t = identifier
+    type t = variable
     let compare t1 t2 = 
-      String.compare t1 t2
-    let sexp_of_t t : Sexp.t = Atom t
+      match t1, t2 with 
+      | Var x, Var y -> String.compare x.alias y.alias
+    let sexp_of_t t : Sexp.t = 
+      match t with 
+      | Var x -> Atom x.alias
   end
 
   include T
@@ -63,7 +103,7 @@ end
 
 
 module Dynamic = struct
-  type var = identifier
+  (* type var = identifier *)
   (* type candVars = var list *)
   type value = var_type list
   type posType = value Map.M (Var2valMap).t
@@ -72,10 +112,13 @@ module Dynamic = struct
  
   
 
-   let to_args : Yojson.Basic.t -> posType 
-  = fun json -> 
-    to_assoc json |> List.map ~f: (fun (a, b) -> (a, to_list b |> List.map ~f:to_string |> List.map ~f: string2type))
-    |> List.filter ~f: (fun (_, b) -> not(List.mem b VNone ~equal: (fun a b -> phys_equal a b)))
+   let to_args : Yojson.Basic.t -> meta_data -> posType 
+  = fun json meta -> 
+    to_assoc json 
+    |> List.map ~f: (fun (a, b) -> (Var{ name = a ; alias = generate_varName() ; meta = meta}, 
+      to_list b 
+      |> List.map ~f: to_string 
+      |> List.map ~f: string2type))
     |> (Map.of_alist_exn (module Var2valMap)) 
  
 (* json2traceback: function that makes json file traceback *)
@@ -86,7 +129,7 @@ module Dynamic = struct
     let classname = json |> member "info" |> member "classname" |> to_string in 
     let funcname = json |> member "info" |> member "funcname" |> to_string in 
     let line = json |> member "info" |> member "line" |> to_int in
-    let args = json |> member "args" |> to_args in 
+    let args = (json |> member "args" |> to_args) (Meta { filename = filename ; classname = classname ; funcname = funcname }) in 
     Traceback {filename = filename ; classname = classname ; funcname = funcname ; line = line ; args = args}
 (* json2tracebacks: function that makes json file tracebacks(traceback list) *)
   let json2tracebacks : Yojson.Basic.t-> tracebacks
@@ -121,7 +164,7 @@ module Print = struct
   let rec print_type : var_type list -> unit
   = fun lst -> 
      match lst with 
-    | [] -> ()
+    | [] -> Stdio.print_endline ""
     | hd :: tl  -> 
       begin 
         match hd with 
@@ -129,15 +172,23 @@ module Print = struct
         | VFloat -> Stdio.print_string "VFlaot " ; print_type tl
         | VString -> Stdio.print_string "VString " ; print_type tl
         | VBool -> Stdio.print_string "VBool " ; print_type tl
+        | VDict -> Stdio.print_string "VDict " ; print_type tl
+        | VList -> Stdio.print_string "VList " ; print_type tl 
+        | VMethod -> Stdio.print_string "VMethod " ; print_type tl
+        | VClass x -> Stdio.print_string ("VClass (" ^ x ^ ")") ; print_type tl 
         | VNone -> Stdio.print_string "VNone " ; print_type tl 
         | VEllipsis -> Stdio.print_string "VEllipsis " ; print_type tl
+
       end
 
 
   let print_args 
   = fun args -> 
     let alist = Map.to_alist args in 
-    List.fold_left ~init:() ~f: (fun _ (key, value)-> Stdio.print_string key ; Stdio.print_string " " ; print_type value) alist ; Stdio.print_endline ""
+    List.fold_left ~init:() ~f: (fun _ (Var(key), value)-> Stdio.print_string key.name ; 
+    Stdio.print_string (" as " ^ key.alias ^ " ")  ; 
+    print_type value) alist
+
   
 
 
@@ -165,7 +216,11 @@ end
 (* ************************ *)
 
 module TCon = struct
-  type constraints = (expr * expr) list
+
+
+  type tcon = Constraint of { expr: expr * expr ; meta: meta_data } 
+  and constraints = tcon list
+
 
 
   let rec generate_tCon : Dynamic.tracebacks -> constraints
@@ -175,13 +230,14 @@ module TCon = struct
       | Traceback tb :: tl -> let pgm = filename2pgm tb.filename in 
       begin   
         match pgm with 
-          | Module _ -> generate_tCon_stmtS (module2tracebacks pgm tb.classname tb.funcname) @ generate_tCon tl
-          | Expression e -> generate_tCon_expr e.body @ generate_tCon tl
+          | Module _ -> generate_tCon_stmtS (module2tracebacks pgm tb.classname tb.funcname) (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname })@ generate_tCon tl
+          | Expression e -> generate_tCon_expr e.body (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname }) @ generate_tCon tl
           | _ -> raise (Failure "not the program")
       end
 
    and filename2pgm : identifier -> pgm 
    = fun filename -> 
+    (* link to file *)
       let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py /home/viselacity/data/pyter/pyter/test" ^ filename ^ " > /tmp/traceback.json") in 
         let json = Yojson.Basic.from_file "/tmp/traceback.json" in Json2ast.to_module json 
 
@@ -196,6 +252,7 @@ module TCon = struct
       match pgm with 
       | ClassDef x -> if String.equal x.name classname then true else false 
       | _ -> false
+
   and isFuncDef
      = fun pgm funcname -> 
       match pgm with 
@@ -206,53 +263,53 @@ module TCon = struct
 
 
   (* generate_tCon_stmts: constraints generating function for statements *)
- and generate_tCon_stmtS : stmt list -> constraints
-  = fun stmtS -> List.fold_left ~init:[] ~f: (fun acc x -> ((generate_tCon_stmt x) @ acc)) stmtS
+ and generate_tCon_stmtS : stmt list -> meta_data -> constraints
+  = fun stmtS meta -> List.fold_left ~init:[] ~f: (fun acc x -> ((generate_tCon_stmt x meta) @ acc)) stmtS
   
   
   (* generate_tCon_stmt: function generating constraints for statement *)
-  and generate_tCon_stmt : stmt -> constraints
-  = fun stmt -> 
+  and generate_tCon_stmt : stmt -> meta_data -> constraints
+  = fun stmt meta -> 
     match stmt with
     (* | FunctionDef of { name: identifier ; args : arguments ; body: stmt list ; decorator_list: expr list ; returns: expr option ; type_comment: string option; attrs: attributes } *)
-    | FunctionDef x -> generate_tCon_stmtS x.body
+    | FunctionDef x -> generate_tCon_stmtS x.body meta
     (* | AsyncFunctionDef of { name: identifier; args: arguments; body: stmt list ; decorator_list: expr list; returns: expr option ; type_comment: string option ; attrs: attributes}  *)
-    | AsyncFunctionDef x -> generate_tCon_stmtS x.body
+    | AsyncFunctionDef x -> generate_tCon_stmtS x.body meta
     (* | ClassDef of { name: identifier ; bases : expr list ; keywords: keyword list; body: stmt list; decorator_list: expr list; attrs: attributes} *)
-    | ClassDef x -> generate_tCon_stmtS x.body
+    | ClassDef x -> generate_tCon_stmtS x.body meta
     (* | Return of { value: expr option ; attrs: attributes } *)
     | Return x -> 
       begin 
         match x.value with 
         | None -> []
-        | Some x' -> generate_tCon_expr x'
+        | Some x' -> generate_tCon_expr x' meta 
       end 
     (* | Delete of { targets : expr list ; attrs:attributes } *)
     | Delete _ -> []
     (* | Assign of { targets: expr list; value: expr ; type_comment: string option ; attrs: attributes} *)
-    | Assign x -> List.map x.targets ~f:(fun expr -> (expr, x.value))
+    | Assign x -> List.map x.targets ~f:(fun expr -> Constraint { expr = (expr, x.value) ; meta = meta })
     (* | AugAssign of {target: expr ; op: operator ; value: expr ; attrs: attributes}  *)
-    | AugAssign x -> [(x.target, x.value)]
+    | AugAssign x -> [Constraint { expr = (x.target, x.value) ; meta = meta }]
     (* | AnnAssign of {target: expr; annotation : expr; value: expr option ; simple : int ; attrs: attributes} *)
-    | AnnAssign x -> [(x.target, x.annotation)]
+    | AnnAssign x -> [Constraint {expr = (x.target, x.annotation) ; meta = meta }]
     (* | For of { target: expr ; iter: expr ; body: stmt list ; orelse: stmt list; type_comment: string option ; attrs : attributes}  *)
-    | For x -> generate_tCon_stmtS x.body
+    | For x -> generate_tCon_stmtS x.body meta 
     (* | AsyncFor of { target: expr ; iter: expr ; body: stmt list ; orelse: stmt list; type_comment: string option ; attrs: attributes} *)
-    | AsyncFor x -> generate_tCon_stmtS x.body
+    | AsyncFor x -> generate_tCon_stmtS x.body meta 
     (* | While of { test: expr; body: stmt list ; orelse: stmt list ; attrs: attributes } *)
-    | While x -> generate_tCon_stmtS x.body
+    | While x -> generate_tCon_stmtS x.body meta 
     (* | If of { test: expr ; body: stmt list ; orelse : stmt list ; attrs: attributes } *)
-    | If x -> generate_tCon_stmtS x.body @ generate_tCon_stmtS x.orelse
+    | If x -> generate_tCon_stmtS x.body meta @ generate_tCon_stmtS x.orelse meta 
     (* | With of { items: withitem list ; body: stmt list ; type_comment: string option ; attrs: attributes } *)
-    | With x -> generate_tCon_stmtS x.body
+    | With x -> generate_tCon_stmtS x.body meta 
     (* | AsyncWith of { items: withitem list ; body: stmt list ; type_comment: string option ; attrs: attributes } *)
-    | AsyncWith x ->  generate_tCon_stmtS x.body
+    | AsyncWith x ->  generate_tCon_stmtS x.body meta 
     (* | Match of { subject: expr ; cases : match_case list ; attrs: attributes }  *)
     | Match _ -> []
     (* | Raise of { exc: expr option ; cause : expr option ; attrs : attributes }  *)
     | Raise _ -> []
     (* | Try of { body : stmt list ; handlers: excepthandler list ; orelse: stmt list ; finalbody: stmt list ; attrs: attributes } *)
-    | Try x -> generate_tCon_stmtS x.body @ generate_tCon_stmtS x.orelse
+    | Try x -> generate_tCon_stmtS x.body meta @ generate_tCon_stmtS x.orelse meta 
      (* | Assert of { test: expr ; msg: expr option ; attrs: attributes } *)
     | Assert _ -> []
     (* | Import of { names: alias list; attrs : attributes } *)
@@ -264,7 +321,7 @@ module TCon = struct
     (* | Nonlocal of { names: identifier list ; attrs: attributes } *)
     | Nonlocal _ -> []
     (* | Expr of { value : expr ; attrs: attributes} *)
-    | Expr x -> generate_tCon_expr x.value
+    | Expr x -> generate_tCon_expr x.value meta
     (* | Pass of { attrs: attributes } *)
     | Pass _ -> []
     (* | Break of { attrs: attributes }  *)
@@ -273,17 +330,17 @@ module TCon = struct
     | Continue _ -> []
 
 (* generate_tCon_expr: function generating constraints for expression *)
-  and generate_tCon_expr : expr -> constraints
-  = fun expr ->
+  and generate_tCon_expr : expr -> meta_data -> constraints
+  = fun expr meta ->
       match expr with 
           (* | BoolOp of { op: boolop ; values: expr list ; attrs: attributes } *)
           (* and | or *)
-          | BoolOp x -> iter_boolop x.values
+          | BoolOp x -> iter_boolop x.values meta 
           (* | NamedExpr of { target: expr ; value: expr ; attrs: attributes } *)
           (* := *)
-          | NamedExpr x -> [(x.target, x.value)]
+          | NamedExpr x -> [Constraint { expr = (x.target, x.value) ; meta = meta }]
         (* | BinOp of { left: expr ; op: operator ; right: expr ; attrs: attributes } *)
-          | BinOp x -> [(x.left, x.right)]
+          | BinOp x -> [Constraint {expr = (x.left, x.right) ; meta = meta }]
           (* | UnaryOp of {op: unaryop ; operand: expr ; attrs: attributes } *)
           | UnaryOp _ -> []
           (* | Lambda of { args: arguments ; body: expr ; attrs: attributes } *)
@@ -311,7 +368,7 @@ module TCon = struct
           (* | Compare of { left: expr ; ops: cmpop list ; comparators: expr list ; attrs: attributes }  *)
           | Compare _ -> []
           (* | Call of { func: expr ; args: expr list ; keywords: keyword list ; attrs: attributes } *)
-          | Call x -> List.fold_left ~init:[] ~f:(fun acc x -> (generate_tCon_expr x) @ acc) x.args
+          | Call x -> List.fold_left ~init:[] ~f:(fun acc x -> (generate_tCon_expr x meta) @ acc) x.args
           (* | FormattedValue of { value: expr ; conversion: int ; format_spec: expr option ; attrs: attributes } *)
           | FormattedValue _ -> []
           (* | JoinedStr of { values: expr list ; attrs: attributes } *)
@@ -335,11 +392,12 @@ module TCon = struct
 
   
 
-    and iter_boolop : expr list -> (expr * expr) list
-    = function 
+    and iter_boolop : expr list -> meta_data -> constraints
+    = fun exprs meta ->
+      match exprs with 
       | [] | _ :: [] -> []  
-      | x :: y :: [] -> (x, y) :: []
-      | x :: y :: tl ->  (x, y) :: iter_boolop (y :: tl)
+      | x :: y :: [] -> Constraint { expr = (x, y) ; meta = meta } :: []
+      | x :: y :: tl ->  Constraint {expr = (x, y) ; meta = meta } :: iter_boolop (y :: tl) meta 
 
 end 
 
@@ -354,45 +412,57 @@ end
 
 
 module TEnv = struct
-  type var = identifier
   type value = var_type list 
   type tEnv = value Map.M (Var2valMap).t
 
  (* Λ^{init} in PyTER *)
  (* init_tEnv: function initializing type envrionment for static analysis *)
-  let rec init_tEnv : var -> Dynamic.posType -> tEnv
-  = fun var tenv -> Map.set tenv ~key:var ~data: []
+  let rec init_tEnv : variable -> Dynamic.posType -> tEnv
+  = fun var tenv -> Map.set tenv ~key: var ~data: []
 
 
    (* Φ in PyTER *)  
    (* updating_tEnv: function that infers type of buggy variable with the information of constarints(i.e. constraints) *)
-   and updating_tEnv : var -> TCon.constraints -> tEnv -> tEnv
-      = fun var tcon tenv -> 
+   and updating_tEnv : variable -> TCon.constraints -> tEnv -> tEnv
+      = fun (Var var) tcon tenv -> 
         match tcon with 
         | [] -> tenv
-        | hd :: tl -> 
+        | Constraint(tcon) :: tl -> 
+          if compVar var.meta tcon.meta then  
           begin 
-            match hd with 
+            match tcon.expr with 
             | Name x, Name y ->
-               if String.equal x.id var && String.equal y.id var then updating_tEnv var tl tenv
-               else if String.equal x.id var then Map.update tenv var ~f:(fun values -> Option.value ~default: [] values @ Map.find_exn tenv x.id)
-               else if String.equal y.id var then Map.update tenv var ~f:(fun values -> Option.value ~default: [] values @ Map.find_exn tenv y.id)
-               else updating_tEnv var tl tenv
+               if String.equal x.id var.name && String.equal y.id var.name then updating_tEnv (Var var) tl tenv
+               else if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> Option.value ~default: [] values @ findVal y.id tcon.meta tenv)
+               else if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> Option.value ~default: [] values @ findVal x.id tcon.meta tenv)
+               else updating_tEnv (Var var) tl tenv
             | Name x, Constant y -> 
-              if String.equal x.id var then Map.update tenv var ~f:(fun values -> (const2type y.value :: Option.value ~default:[] values))
-              else updating_tEnv var tl tenv 
+              if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> (const2type y.value :: Option.value ~default:[] values))
+              else updating_tEnv (Var var) tl tenv 
             | Constant x, Name y -> 
-              if String.equal y.id var then Map.update tenv var ~f:(fun values -> (const2type x.value :: Option.value ~default:[] values))
-              else updating_tEnv var tl tenv
-            | _ -> updating_tEnv var tl tenv
+              if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> (const2type x.value :: Option.value ~default:[] values))
+              else updating_tEnv (Var var) tl tenv
+            | _ -> updating_tEnv (Var var) tl tenv
           end 
+        else updating_tEnv (Var var) tl tenv 
+    
+    and compVar : meta_data -> meta_data -> bool 
+    = fun (Meta var) (Meta tcon) -> 
+      (String.equal var.filename tcon.filename) && (String.equal var.classname tcon.classname) && (String.equal var.funcname tcon.funcname)
+    and findVal : identifier -> meta_data -> tEnv-> value
+    = fun name meta tenv -> 
+      let tenv_list = Map.to_alist tenv in
+      let (_, var)= List.find_exn tenv_list ~f:(fun ((Var var), _) -> compVar var.meta meta && String.equal var.name name) in var
+
+    
+  
 
 
 
 (* dom_type: function that returns mode type in var_type list *)
   and dom_type : value -> value
   = fun values -> 
-    let types = [VInt ; VBool ; VString ; VFloat] in 
+    let types = List.dedup_and_sort ~compare: (fun x y -> String.compare (type2string x) (type2string y)) values in 
     let ordered = List.map ~f:(fun x -> (x, count_values x values)) types in
     let ordered = List.sort ~compare: (fun (_, a) (_, b) -> a-b) ordered  |> List.rev in 
     let max = match List.hd ordered with Some (_ ,num) -> num | None -> -1 in 
@@ -411,6 +481,9 @@ module TEnv = struct
   and is_type : var_type -> var_type -> int 
   = fun value target -> if phys_equal value target then 1 else 0
   
+
+
+
     
 end   
 
