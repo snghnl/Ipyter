@@ -155,68 +155,11 @@ end
 
 
 
-(* ************************** *)
-(* Print functions (for test) *)
-(* ************************** *)
-
-
-module Print = struct
-  let rec print_type : var_type list -> unit
-  = fun lst -> 
-     match lst with 
-    | [] -> Stdio.print_endline ""
-    | hd :: tl  -> 
-      begin 
-        match hd with 
-        | VInt -> Stdio.print_string "VInt " ; print_type tl
-        | VFloat -> Stdio.print_string "VFlaot " ; print_type tl
-        | VString -> Stdio.print_string "VString " ; print_type tl
-        | VBool -> Stdio.print_string "VBool " ; print_type tl
-        | VDict -> Stdio.print_string "VDict " ; print_type tl
-        | VList -> Stdio.print_string "VList " ; print_type tl 
-        | VMethod -> Stdio.print_string "VMethod " ; print_type tl
-        | VClass x -> Stdio.print_string ("VClass (" ^ x ^ ")") ; print_type tl 
-        | VNone -> Stdio.print_string "VNone " ; print_type tl 
-        | VEllipsis -> Stdio.print_string "VEllipsis " ; print_type tl
-
-      end
-
-
-  let print_args 
-  = fun args -> 
-    let alist = Map.to_alist args in 
-    List.fold_left ~init:() ~f: (fun _ (Var(key), value)-> Stdio.print_string key.name ; 
-    Stdio.print_string (" as " ^ key.alias ^ " ")  ; 
-    print_type value) alist
-
-  
-
-
-  let print_traceback : Dynamic.traceback -> unit
-  = fun traceback ->
-    match traceback with 
-    | Traceback x -> 
-      Stdio.print_endline "\nTraceback" ;
-      Stdio.print_endline x.filename ;
-      Stdio.print_endline x.classname ;
-      Stdio.print_endline x.funcname ;
-      Stdlib.Printf.printf "%d\n" x.line ;
-      print_args x.args
-      
-
-
-  let print_tracebacks : Dynamic.tracebacks -> unit
-  = fun tracebacks -> List.fold_left ~init:() ~f:(fun _ x -> print_traceback x) tracebacks
-
-
-end
-
 (* ************************ *)
 (* Module: Type Constraints *)
 (* ************************ *)
 
 module TCon = struct
-
 
   type tcon = Constraint of { expr: expr * expr ; meta: meta_data } 
   and constraints = tcon list
@@ -238,7 +181,7 @@ module TCon = struct
    and filename2pgm : identifier -> pgm 
    = fun filename -> 
     (* link to file *)
-      let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py /home/viselacity/data/pyter/pyter/test" ^ filename ^ " > /tmp/traceback.json") in 
+      let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py " ^ filename ^ " > /tmp/traceback.json") in 
         let json = Yojson.Basic.from_file "/tmp/traceback.json" in Json2ast.to_module json 
 
   and module2tracebacks : pgm -> identifier -> identifier -> stmt list 
@@ -397,7 +340,7 @@ module TCon = struct
       match exprs with 
       | [] | _ :: [] -> []  
       | x :: y :: [] -> Constraint { expr = (x, y) ; meta = meta } :: []
-      | x :: y :: tl ->  Constraint {expr = (x, y) ; meta = meta } :: iter_boolop (y :: tl) meta 
+      | x :: y :: tl ->  Constraint { expr = (x, y) ; meta = meta } :: iter_boolop (y :: tl) meta 
 
 end 
 
@@ -423,45 +366,43 @@ module TEnv = struct
 
    (* Φ in PyTER *)  
    (* updating_tEnv: function that infers type of buggy variable with the information of constarints(i.e. constraints) *)
-   and updating_tEnv : variable -> TCon.constraints -> tEnv -> tEnv
-      = fun (Var var) tcon tenv -> 
-        match tcon with 
-        | [] -> tenv
-        | Constraint(tcon) :: tl -> 
-          if compVar var.meta tcon.meta then  
-          begin 
-            match tcon.expr with 
-            | Name x, Name y ->
-               if String.equal x.id var.name && String.equal y.id var.name then updating_tEnv (Var var) tl tenv
-               else if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> Option.value ~default: [] values @ findVal y.id tcon.meta tenv)
-               else if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> Option.value ~default: [] values @ findVal x.id tcon.meta tenv)
-               else updating_tEnv (Var var) tl tenv
-            | Name x, Constant y -> 
-              if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> (const2type y.value :: Option.value ~default:[] values))
-              else updating_tEnv (Var var) tl tenv 
-            | Constant x, Name y -> 
-              if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> (const2type x.value :: Option.value ~default:[] values))
+  and updating_tEnv : variable -> TCon.constraints -> tEnv -> tEnv
+    = fun (Var var) tcon tenv -> 
+      match tcon with 
+      | [] -> tenv
+      | Constraint(tcon) :: tl -> 
+        if compVar var.meta tcon.meta then  
+        begin 
+          match tcon.expr with 
+          | Name x, Name y ->
+              if String.equal x.id var.name && String.equal y.id var.name then updating_tEnv (Var var) tl tenv
+              else if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> Option.value ~default: [] values @ findVal y.id tcon.meta tenv)
+              else if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> Option.value ~default: [] values @ findVal x.id tcon.meta tenv)
               else updating_tEnv (Var var) tl tenv
-            | _ -> updating_tEnv (Var var) tl tenv
-          end 
-        else updating_tEnv (Var var) tl tenv 
+          | Name x, Constant y -> 
+            if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> (const2type y.value :: Option.value ~default:[] values))
+            else updating_tEnv (Var var) tl tenv 
+          | Constant x, Name y -> 
+            if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> (const2type x.value :: Option.value ~default:[] values))
+            else updating_tEnv (Var var) tl tenv
+          | _ -> updating_tEnv (Var var) tl tenv
+        end 
+      else updating_tEnv (Var var) tl tenv 
     
-    and compVar : meta_data -> meta_data -> bool 
-    = fun (Meta var) (Meta tcon) -> 
-      (String.equal var.filename tcon.filename) && (String.equal var.classname tcon.classname) && (String.equal var.funcname tcon.funcname)
-    and findVal : identifier -> meta_data -> tEnv-> value
-    = fun name meta tenv -> 
-      let tenv_list = Map.to_alist tenv in
-      let (_, var)= List.find_exn tenv_list ~f:(fun ((Var var), _) -> compVar var.meta meta && String.equal var.name name) in var
+  and compVar : meta_data -> meta_data -> bool 
+  = fun (Meta var) (Meta tcon) -> 
+    (String.equal var.filename tcon.filename) && (String.equal var.classname tcon.classname) && (String.equal var.funcname tcon.funcname)
+  and findVal : identifier -> meta_data -> tEnv-> value
+  = fun name meta tenv -> 
+    let tenv_list = Map.to_alist tenv in
+    let (_, var)= List.find_exn tenv_list ~f:(fun ((Var var), _) -> compVar var.meta meta && String.equal var.name name) in var
 
     
-  
-
-
 
 (* dom_type: function that returns mode type in var_type list *)
   and dom_type : value -> value
   = fun values -> 
+    (* let () = Print.print_type values in  *)
     let types = List.dedup_and_sort ~compare: (fun x y -> String.compare (type2string x) (type2string y)) values in 
     let ordered = List.map ~f:(fun x -> (x, count_values x values)) types in
     let ordered = List.sort ~compare: (fun (_, a) (_, b) -> a-b) ordered  |> List.rev in 
@@ -474,28 +415,88 @@ module TEnv = struct
 (* count_values: function counting the number of certain type "value" *)
   and count_values : var_type -> value -> int
   = fun value values -> let is_type = is_type value in 
-     List.fold_left ~init:0 ~f: (fun acc x -> is_type x + acc) values
+      List.fold_left ~init:0 ~f: (fun acc x -> is_type x + acc) values
 
 (* used in count_values *)
 (* is_type: function comparing value and target; if same return 1 else 0 *)
   and is_type : var_type -> var_type -> int 
   = fun value target -> if phys_equal value target then 1 else 0
   
-
-
-
-    
 end   
+
+
+(* ************************** *)
+(* Print functions (for test) *)
+(* ************************** *)
+
+
+module Print = struct
+  let rec print_type : var_type list -> unit
+  = fun lst -> 
+     match lst with 
+    | [] -> ()
+    | hd :: tl  -> 
+      begin 
+        match hd with 
+        | VInt -> Stdio.print_string "VInt " ; print_type tl
+        | VFloat -> Stdio.print_string "VFlaot " ; print_type tl
+        | VString -> Stdio.print_string "VString " ; print_type tl
+        | VBool -> Stdio.print_string "VBool " ; print_type tl
+        | VDict -> Stdio.print_string "VDict " ; print_type tl
+        | VList -> Stdio.print_string "VList " ; print_type tl 
+        | VMethod -> Stdio.print_string "VMethod " ; print_type tl
+        | VClass x -> Stdio.print_string ("VClass (" ^ x ^ ")") ; print_type tl 
+        | VNone -> Stdio.print_string "VNone " ; print_type tl 
+        | VEllipsis -> Stdio.print_string "VEllipsis " ; print_type tl
+
+      end
+
+
+  let print_args 
+  = fun args -> 
+    let alist = Map.to_alist args in 
+    List.fold_left ~init:() ~f: (fun _ (Var(key), value)-> Stdio.print_string key.name ; 
+    Stdio.print_string (" as " ^ key.alias ^ " ")  ; 
+    print_type value) alist
+
+  
+
+
+  let print_traceback : Dynamic.traceback -> unit
+  = fun traceback ->
+    match traceback with 
+    | Traceback x -> 
+      Stdio.print_endline "\nTraceback" ;
+      Stdio.print_endline x.filename ;
+      Stdio.print_endline x.classname ;
+      Stdio.print_endline x.funcname ;
+      Stdlib.Printf.printf "%d\n" x.line ;
+      print_args x.args
+      
+
+
+  let print_tracebacks : Dynamic.tracebacks -> unit
+  = fun tracebacks -> List.fold_left ~init:() ~f:(fun _ x -> print_traceback x) tracebacks
+
+  let print_map : TEnv.tEnv -> unit
+  = fun tenv ->
+    let _ = Map.mapi tenv ~f:(fun ~key: (Var key) ~data: _ -> Stdio.print_string (key.name ^ " as " ^  key.alias ^ " ") ; print_type (Map.find_exn tenv (Var key)) ; Stdio.print_endline "") in ()
+
+
+end
+
+
+
 
 
 let anal : Yojson.Basic.t -> TEnv.tEnv
 = fun dynamic -> 
   let tracebacks = Dynamic.json2tracebacks dynamic in 
-  let postypes = Dynamic.dynamicAnal tracebacks in 
+  let postypes = Dynamic.dynamicAnal tracebacks in
+  let () = Print.print_map postypes in
   let constraints = TCon.generate_tCon tracebacks in
   Map.mapi ~f: (fun ~key: var ~data: _ -> 
     (TEnv.init_tEnv var postypes 
-  |> TEnv.updating_tEnv var constraints 
+  |> TEnv.updating_tEnv var constraints
   |> Map.find_exn) var
   |> TEnv.dom_type) postypes
-  

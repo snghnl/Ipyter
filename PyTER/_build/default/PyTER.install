@@ -13,6 +13,7 @@ lib: [
   "_build/install/default/lib/PyTER/pycaml/ast2string.ml" {"pycaml/ast2string.ml"}
   "_build/install/default/lib/PyTER/pycaml/flocal.ml" {"pycaml/flocal.ml"}
   "_build/install/default/lib/PyTER/pycaml/json2ast.ml" {"pycaml/json2ast.ml"}
+  "_build/install/default/lib/PyTER/pycaml/patch.ml" {"pycaml/patch.ml"}
   "_build/install/default/lib/PyTER/pycaml/pycaml.a" {"pycaml/pycaml.a"}
   "_build/install/default/lib/PyTER/pycaml/pycaml.cma" {"pycaml/pycaml.cma"}
   "_build/install/default/lib/PyTER/pycaml/pycaml.cmi" {"pycaml/pycaml.cmi"}
@@ -32,6 +33,9 @@ lib: [
   "_build/install/default/lib/PyTER/pycaml/pycaml__Json2ast.cmi" {"pycaml/pycaml__Json2ast.cmi"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Json2ast.cmt" {"pycaml/pycaml__Json2ast.cmt"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Json2ast.cmx" {"pycaml/pycaml__Json2ast.cmx"}
+  "_build/install/default/lib/PyTER/pycaml/pycaml__Patch.cmi" {"pycaml/pycaml__Patch.cmi"}
+  "_build/install/default/lib/PyTER/pycaml/pycaml__Patch.cmt" {"pycaml/pycaml__Patch.cmt"}
+  "_build/install/default/lib/PyTER/pycaml/pycaml__Patch.cmx" {"pycaml/pycaml__Patch.cmx"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Static.cmi" {"pycaml/pycaml__Static.cmi"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Static.cmt" {"pycaml/pycaml__Static.cmt"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Static.cmx" {"pycaml/pycaml__Static.cmx"}

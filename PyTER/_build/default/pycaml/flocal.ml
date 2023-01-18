@@ -1,7 +1,7 @@
 open Static
-open Ast
+(* open Ast *)
 open Base
-open Util
+(* open Util *)
 
 
 (* Flocal: Fault Localization *)

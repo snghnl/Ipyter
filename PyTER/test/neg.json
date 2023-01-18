@@ -1,0 +1,94 @@
+[
+    {
+        "idx": [
+            0
+        ],
+        "info": {
+            "funcname": "_compute_plot_data",
+            "filename": "/mnt/c/ubuntu_data/pyter_tool/pyter/pyter/benchmark/pandas/pandas-17430/pandas/pandas/plotting/_core.py",
+            "classname": "MPLPlot._compute_plot_data",
+            "line": 355
+        },
+        "args": {
+            "numeric_data": [
+                "pandas.core.frame.DataFrame"
+            ],
+            "numeric_data.__class__": [
+                "type"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0
+        ],
+        "info": {
+            "funcname": "generate",
+            "filename": "/mnt/c/ubuntu_data/pyter_tool/pyter/pyter/benchmark/pandas/pandas-17430/pandas/pandas/plotting/_core.py",
+            "classname": "MPLPlot.generate",
+            "line": 246
+        },
+        "args": {
+            "self": [
+                "pandas.plotting._core.LinePlot"
+            ],
+            "self._compute_plot_data": [
+                "method"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0
+        ],
+        "info": {
+            "funcname": "_plot",
+            "filename": "/mnt/c/ubuntu_data/pyter_tool/pyter/pyter/benchmark/pandas/pandas-17430/pandas/pandas/plotting/_core.py",
+            "classname": "_plot",
+            "line": 1708
+        },
+        "args": {
+            "plot_obj": [
+                "pandas.plotting._core.LinePlot"
+            ],
+            "plot_obj.generate": [
+                "method"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0
+        ],
+        "info": {
+            "funcname": "plot_frame",
+            "filename": "/mnt/c/ubuntu_data/pyter_tool/pyter/pyter/benchmark/pandas/pandas-17430/pandas/pandas/plotting/_core.py",
+            "classname": "plot_frame",
+            "line": 1883
+        },
+        "args": {
+            "kwds": [
+                "Dict"
+            ]
+        }
+    },
+    {
+        "idx": [
+            0
+        ],
+        "info": {
+            "funcname": "__call__",
+            "filename": "/mnt/c/ubuntu_data/pyter_tool/pyter/pyter/benchmark/pandas/pandas-17430/pandas/pandas/plotting/_core.py",
+            "classname": "FramePlotMethods.__call__",
+            "line": 2654
+        },
+        "args": {
+            "kwds": [
+                "Dict"
+            ],
+            "sort_columns": [
+                "bool"
+            ]
+        }
+    }
+]
