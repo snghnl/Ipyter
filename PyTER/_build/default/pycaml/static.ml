@@ -140,12 +140,9 @@ module Dynamic = struct
   = fun tracebacks -> List.fold_left ~init:[] ~f:(fun acc (Traceback x) -> Map.keys x.args @ acc) tracebacks *)
 
   let dynamicAnal : tracebacks -> posType
-  = fun tracebacks -> List.map ~f: (fun (Traceback x) -> x.args) tracebacks 
-    |> List.fold ~init: (Map.empty (module Var2valMap)) ~f: (fun acc x -> 
-      match Map.append ~lower_part: x ~upper_part: acc with 
-      | `Ok x -> x 
-      | _ -> Map.empty (module Var2valMap)
-    )
+  = fun tracebacks -> List.map ~f: (fun (Traceback x) -> Map.to_alist x.args) tracebacks 
+    |> List.concat |> Map.of_alist_exn (module Var2valMap)
+    
 
 
 end 
@@ -347,7 +344,6 @@ end
 
 
 
-
 (* ************************ *)
 (* Module: Type Environment *)
 (* ************************ *)
@@ -371,7 +367,7 @@ module TEnv = struct
       match tcon with 
       | [] -> tenv
       | Constraint(tcon) :: tl -> 
-        if compVar var.meta tcon.meta then  
+        (* if compVar var.meta tcon.meta then   *)
         begin 
           match tcon.expr with 
           | Name x, Name y ->
@@ -387,7 +383,7 @@ module TEnv = struct
             else updating_tEnv (Var var) tl tenv
           | _ -> updating_tEnv (Var var) tl tenv
         end 
-      else updating_tEnv (Var var) tl tenv 
+      (* else updating_tEnv (Var var) tl tenv  *)
     
   and compVar : meta_data -> meta_data -> bool 
   = fun (Meta var) (Meta tcon) -> 
@@ -404,9 +400,10 @@ module TEnv = struct
   = fun values -> 
     (* let () = Print.print_type values in  *)
     let types = List.dedup_and_sort ~compare: (fun x y -> String.compare (type2string x) (type2string y)) values in 
+    (* let () = Print.print_type types in *)
     let ordered = List.map ~f:(fun x -> (x, count_values x values)) types in
     let ordered = List.sort ~compare: (fun (_, a) (_, b) -> a-b) ordered  |> List.rev in 
-    let max = match List.hd ordered with Some (_ ,num) -> num | None -> -1 in 
+    let max = match List.hd ordered with Some (_ ,num) -> num | None -> 0 in 
     List.filter ~f: (fun(_,a) -> a = max) ordered
     |> List.map ~f: (fun (a, _) -> a)
 
@@ -420,9 +417,11 @@ module TEnv = struct
 (* used in count_values *)
 (* is_type: function comparing value and target; if same return 1 else 0 *)
   and is_type : var_type -> var_type -> int 
-  = fun value target -> if phys_equal value target then 1 else 0
+  = fun value target -> if String.equal (type2string value) (type2string target) then 1 else 0
   
 end   
+
+
 
 
 (* ************************** *)
@@ -434,7 +433,7 @@ module Print = struct
   let rec print_type : var_type list -> unit
   = fun lst -> 
      match lst with 
-    | [] -> Stdio.print_endline "empty"
+    | [] -> ()
     | hd :: tl  -> 
       begin 
         match hd with 
@@ -488,12 +487,11 @@ end
 
 
 
-
 let anal : Yojson.Basic.t -> TEnv.tEnv
 = fun dynamic -> 
   let tracebacks = Dynamic.json2tracebacks dynamic in 
   let postypes = Dynamic.dynamicAnal tracebacks in
-  let () = Print.print_map postypes in
+  (* let () = Print.print_map postypes in *)
   let constraints = TCon.generate_tCon tracebacks in
   Map.mapi ~f: (fun ~key: var ~data: _ -> 
     (TEnv.init_tEnv var postypes 

@@ -7,7 +7,7 @@ let json = Yojson.Basic.from_file filename
 
 let static = anal json 
 
-let () = Print.print_args static
+let () = Print.print_map static
 
 
 
