@@ -5,6 +5,7 @@
  (lib
   (META
    dune-package
+   lib/flocal.ml
    lib/lib.a
    lib/lib.cma
    lib/lib.cmi
@@ -12,12 +13,21 @@
    lib/lib.cmx
    lib/lib.cmxa
    lib/lib.ml
+   lib/lib__Flocal.cmi
+   lib/lib__Flocal.cmt
+   lib/lib__Flocal.cmx
+   lib/lib__Patch.cmi
+   lib/lib__Patch.cmt
+   lib/lib__Patch.cmx
+   lib/lib__Static.cmi
+   lib/lib__Static.cmt
+   lib/lib__Static.cmx
+   lib/patch.ml
+   lib/static.ml
    opam
    pycaml/ast.ml
    pycaml/ast2string.ml
-   pycaml/flocal.ml
    pycaml/json2ast.ml
-   pycaml/patch.ml
    pycaml/pycaml.a
    pycaml/pycaml.cma
    pycaml/pycaml.cmi
@@ -31,22 +41,12 @@
    pycaml/pycaml__Ast2string.cmi
    pycaml/pycaml__Ast2string.cmt
    pycaml/pycaml__Ast2string.cmx
-   pycaml/pycaml__Flocal.cmi
-   pycaml/pycaml__Flocal.cmt
-   pycaml/pycaml__Flocal.cmx
    pycaml/pycaml__Json2ast.cmi
    pycaml/pycaml__Json2ast.cmt
    pycaml/pycaml__Json2ast.cmx
-   pycaml/pycaml__Patch.cmi
-   pycaml/pycaml__Patch.cmt
-   pycaml/pycaml__Patch.cmx
-   pycaml/pycaml__Static.cmi
-   pycaml/pycaml__Static.cmt
-   pycaml/pycaml__Static.cmx
    pycaml/pycaml__Util.cmi
    pycaml/pycaml__Util.cmt
    pycaml/pycaml__Util.cmx
-   pycaml/static.ml
    pycaml/util.ml))
  (libexec (lib/lib.cmxs pycaml/pycaml.cmxs))
  (bin (PyTER)))
@@ -56,12 +56,16 @@
  (archives (byte lib/lib.cma) (native lib/lib.cmxa))
  (plugins (byte lib/lib.cma) (native lib/lib.cmxs))
  (native_archives lib/lib.a)
- (requires PyTER.pycaml base stdio core)
+ (requires PyTER.pycaml base stdio core yojson batteries)
  (main_module_name Lib)
  (modes byte native)
  (modules
   (wrapped
    (main_module_name Lib)
+   (modules
+    ((name Flocal) (obj_name lib__Flocal) (visibility public) (impl))
+    ((name Patch) (obj_name lib__Patch) (visibility public) (impl))
+    ((name Static) (obj_name lib__Static) (visibility public) (impl)))
    (alias_module
     (name Lib)
     (obj_name lib)
@@ -87,10 +91,7 @@
      (obj_name pycaml__Ast2string)
      (visibility public)
      (impl))
-    ((name Flocal) (obj_name pycaml__Flocal) (visibility public) (impl))
     ((name Json2ast) (obj_name pycaml__Json2ast) (visibility public) (impl))
-    ((name Patch) (obj_name pycaml__Patch) (visibility public) (impl))
-    ((name Static) (obj_name pycaml__Static) (visibility public) (impl))
     ((name Util) (obj_name pycaml__Util) (visibility public) (impl)))
    (alias_module
     (name Pycaml)

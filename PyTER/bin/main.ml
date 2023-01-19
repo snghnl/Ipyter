@@ -1,4 +1,6 @@
-open Pycaml.Static
+open Lib.Static
+
+
 (* open Pycaml.Ast *)
 
 
@@ -7,7 +9,7 @@ let json = Yojson.Basic.from_file filename
 
 let static = anal json 
 
-let () = Print.print_map static
+let () = print_map static
 
 
 

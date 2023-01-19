@@ -1,6 +1,7 @@
 lib: [
   "_build/install/default/lib/PyTER/META"
   "_build/install/default/lib/PyTER/dune-package"
+  "_build/install/default/lib/PyTER/lib/flocal.ml" {"lib/flocal.ml"}
   "_build/install/default/lib/PyTER/lib/lib.a" {"lib/lib.a"}
   "_build/install/default/lib/PyTER/lib/lib.cma" {"lib/lib.cma"}
   "_build/install/default/lib/PyTER/lib/lib.cmi" {"lib/lib.cmi"}
@@ -8,12 +9,21 @@ lib: [
   "_build/install/default/lib/PyTER/lib/lib.cmx" {"lib/lib.cmx"}
   "_build/install/default/lib/PyTER/lib/lib.cmxa" {"lib/lib.cmxa"}
   "_build/install/default/lib/PyTER/lib/lib.ml" {"lib/lib.ml"}
+  "_build/install/default/lib/PyTER/lib/lib__Flocal.cmi" {"lib/lib__Flocal.cmi"}
+  "_build/install/default/lib/PyTER/lib/lib__Flocal.cmt" {"lib/lib__Flocal.cmt"}
+  "_build/install/default/lib/PyTER/lib/lib__Flocal.cmx" {"lib/lib__Flocal.cmx"}
+  "_build/install/default/lib/PyTER/lib/lib__Patch.cmi" {"lib/lib__Patch.cmi"}
+  "_build/install/default/lib/PyTER/lib/lib__Patch.cmt" {"lib/lib__Patch.cmt"}
+  "_build/install/default/lib/PyTER/lib/lib__Patch.cmx" {"lib/lib__Patch.cmx"}
+  "_build/install/default/lib/PyTER/lib/lib__Static.cmi" {"lib/lib__Static.cmi"}
+  "_build/install/default/lib/PyTER/lib/lib__Static.cmt" {"lib/lib__Static.cmt"}
+  "_build/install/default/lib/PyTER/lib/lib__Static.cmx" {"lib/lib__Static.cmx"}
+  "_build/install/default/lib/PyTER/lib/patch.ml" {"lib/patch.ml"}
+  "_build/install/default/lib/PyTER/lib/static.ml" {"lib/static.ml"}
   "_build/install/default/lib/PyTER/opam"
   "_build/install/default/lib/PyTER/pycaml/ast.ml" {"pycaml/ast.ml"}
   "_build/install/default/lib/PyTER/pycaml/ast2string.ml" {"pycaml/ast2string.ml"}
-  "_build/install/default/lib/PyTER/pycaml/flocal.ml" {"pycaml/flocal.ml"}
   "_build/install/default/lib/PyTER/pycaml/json2ast.ml" {"pycaml/json2ast.ml"}
-  "_build/install/default/lib/PyTER/pycaml/patch.ml" {"pycaml/patch.ml"}
   "_build/install/default/lib/PyTER/pycaml/pycaml.a" {"pycaml/pycaml.a"}
   "_build/install/default/lib/PyTER/pycaml/pycaml.cma" {"pycaml/pycaml.cma"}
   "_build/install/default/lib/PyTER/pycaml/pycaml.cmi" {"pycaml/pycaml.cmi"}
@@ -27,22 +37,12 @@ lib: [
   "_build/install/default/lib/PyTER/pycaml/pycaml__Ast2string.cmi" {"pycaml/pycaml__Ast2string.cmi"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Ast2string.cmt" {"pycaml/pycaml__Ast2string.cmt"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Ast2string.cmx" {"pycaml/pycaml__Ast2string.cmx"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Flocal.cmi" {"pycaml/pycaml__Flocal.cmi"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Flocal.cmt" {"pycaml/pycaml__Flocal.cmt"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Flocal.cmx" {"pycaml/pycaml__Flocal.cmx"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Json2ast.cmi" {"pycaml/pycaml__Json2ast.cmi"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Json2ast.cmt" {"pycaml/pycaml__Json2ast.cmt"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Json2ast.cmx" {"pycaml/pycaml__Json2ast.cmx"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Patch.cmi" {"pycaml/pycaml__Patch.cmi"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Patch.cmt" {"pycaml/pycaml__Patch.cmt"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Patch.cmx" {"pycaml/pycaml__Patch.cmx"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Static.cmi" {"pycaml/pycaml__Static.cmi"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Static.cmt" {"pycaml/pycaml__Static.cmt"}
-  "_build/install/default/lib/PyTER/pycaml/pycaml__Static.cmx" {"pycaml/pycaml__Static.cmx"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Util.cmi" {"pycaml/pycaml__Util.cmi"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Util.cmt" {"pycaml/pycaml__Util.cmt"}
   "_build/install/default/lib/PyTER/pycaml/pycaml__Util.cmx" {"pycaml/pycaml__Util.cmx"}
-  "_build/install/default/lib/PyTER/pycaml/static.ml" {"pycaml/static.ml"}
   "_build/install/default/lib/PyTER/pycaml/util.ml" {"pycaml/util.ml"}
 ]
 libexec: [

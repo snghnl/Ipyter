@@ -1,4 +1,4 @@
 (library
   (name lib)
   (public_name PyTER.lib)
-  (libraries PyTER.pycaml base stdio core))
+  (libraries PyTER.pycaml base stdio core yojson batteries))

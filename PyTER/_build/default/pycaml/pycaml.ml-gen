@@ -6,17 +6,8 @@ module Ast = Pycaml__Ast
 (** @canonical Pycaml.Ast2string *)
 module Ast2string = Pycaml__Ast2string
 
-(** @canonical Pycaml.Flocal *)
-module Flocal = Pycaml__Flocal
-
 (** @canonical Pycaml.Json2ast *)
 module Json2ast = Pycaml__Json2ast
-
-(** @canonical Pycaml.Patch *)
-module Patch = Pycaml__Patch
-
-(** @canonical Pycaml.Static *)
-module Static = Pycaml__Static
 
 (** @canonical Pycaml.Util *)
 module Util = Pycaml__Util
