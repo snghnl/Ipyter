@@ -1,0 +1,633 @@
+{
+    "/mnt/c/ubuntu_data/pyter_tool/pyter/pyter/benchmark/pandas/pandas-17430/pandas/pandas/plotting/_core.py": {
+        "2654": [
+            {
+                "info": {
+                    "kwds": "Dict",
+                    "sort_columns": "bool"
+                },
+                "samples": 220
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => bool]",
+                    "sort_columns": "bool"
+                },
+                "samples": 19
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => str]",
+                    "sort_columns": "bool"
+                },
+                "samples": 37
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => List[str]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 12
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Tuple[int/int/int]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Tuple[int/int/int/float]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => int]",
+                    "sort_columns": "bool"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/int]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => float]",
+                    "sort_columns": "bool"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/float]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/float/str]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 36
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/float/int/str]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 5
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[List[int]/bool]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/numpy.ndarray<<int64>>]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => numpy.ndarray<<int64>>]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => None]",
+                    "sort_columns": "bool"
+                },
+                "samples": 16
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[str]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 16
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[int]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 9
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/str]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[bool]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/numpy.ndarray<<int64>>]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/int]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[int/str]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/int/str]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[Dict[str => str]/str]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[Tuple[int/int/int]/str]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Dict[str => str]]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[function/str]]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => matplotlib.colors.ListedColormap]",
+                    "sort_columns": "bool"
+                },
+                "samples": 1
+            }
+        ],
+        "1883": [
+            {
+                "info": {
+                    "kwds": "Dict"
+                },
+                "samples": 220
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => bool]"
+                },
+                "samples": 19
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => str]"
+                },
+                "samples": 37
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => List[str]]"
+                },
+                "samples": 12
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Tuple[int/int/int]]"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Tuple[int/int/int/float]]"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => int]"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/int]]"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => float]"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/float]]"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/float/str]]"
+                },
+                "samples": 36
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/float/int/str]]"
+                },
+                "samples": 5
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[List[int]/bool]]"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[bool/numpy.ndarray<<int64>>]]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => numpy.ndarray<<int64>>]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => None]"
+                },
+                "samples": 16
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[str]]"
+                },
+                "samples": 16
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[int]]"
+                },
+                "samples": 9
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/str]]]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[bool]]"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/numpy.ndarray<<int64>>]]]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/int]]]"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[int/str]]]"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[bool/int/str]]]"
+                },
+                "samples": 4
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[Dict[str => str]/str]]]"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Union[Tuple[int/int/int]/str]]]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Optional[Dict[str => str]]]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => Union[function/str]]"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "kwds": "Dict[str => matplotlib.colors.ListedColormap]"
+                },
+                "samples": 1
+            }
+        ],
+        "1708": [
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.LinePlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 205
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.LinePlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 8
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.BarPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 73
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.BarhPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 38
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.AreaPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 11
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.ScatterPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 19
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.ScatterPlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 1
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.BoxPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 22
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.HistPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 22
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.BarPlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.BarhPlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.AreaPlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.HistPlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.BoxPlot",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.HexBinPlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 13
+            },
+            {
+                "info": {
+                    "plot_obj": "pandas.plotting._core.PiePlot",
+                    "plot_obj.generate()": "None",
+                    "plot_obj.generate": "method"
+                },
+                "samples": 3
+            }
+        ],
+        "246": [
+            {
+                "info": {
+                    "self": "pandas.plotting._core.LinePlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 211
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.BarPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 73
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.BarhPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 38
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.AreaPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 11
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.ScatterPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 20
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.BoxPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 22
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.HistPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 22
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.LinePlot",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.BarPlot",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.BarhPlot",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.AreaPlot",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 3
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.HistPlot",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.BoxPlot",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 2
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.HexBinPlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 13
+            },
+            {
+                "info": {
+                    "self": "pandas.plotting._core.PiePlot",
+                    "self._compute_plot_data()": "None",
+                    "self._compute_plot_data": "method"
+                },
+                "samples": 3
+            }
+        ],
+        "355": [
+            {
+                "info": {
+                    "numeric_data": "pandas.core.frame.DataFrame",
+                    "numeric_data.__class__": "type"
+                },
+                "samples": 13
+            }
+        ]
+    }
+}

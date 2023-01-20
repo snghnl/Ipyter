@@ -1,6 +1,7 @@
 open Static
-(* open Ast *)
+open Pycaml.Ast
 open Base
+open Yojson.Basic.Util
 (* open Util *)
 
 
@@ -13,10 +14,11 @@ open Base
 
 
 
+type posType = Dynamic.posType
+type negType = TEnv.tEnv
 
-
-
-type delta = Delta of { traceback: Dynamic.traceback ; line: int ; postype: Dynamic.posType ; negtype : TEnv.tEnv }
+(* (F, x, l, PostType, NegType) *)
+type delta = Delta of { var : variable ; lineno: int ; postype: posType ; negtype : negType }
 
 
 
@@ -41,14 +43,13 @@ module VarSet = struct
 
 module FuncLev = struct
   
-    type var = variable 
     type value = var_type list
     type dynamic = value Map.M (Var2valMap).t
     type static = value Map.M (Var2valMap).t
     type varSet = Set.M(VarSet).t
 
     (* find_susVar: function finding suspicious variable *)
-    let find_susVar : Dynamic.posType -> TEnv.tEnv -> var list 
+    let find_susFun : posType -> negType -> variable list 
     = fun dynamic static -> 
         let keys = Map.keys static in 
         let assoc = List.map ~f:(fun var ->
@@ -62,39 +63,133 @@ module FuncLev = struct
           List.filter ~f: (fun(_,a) -> a = max) ordered
           |> List.map ~f: (fun (a,_) -> a)
 
-    
-    let find_susFunc : var -> Dynamic.tracebacks -> Dynamic.tracebacks
-    = fun var tracebacks -> List.filter ~f:(fun (Traceback x) -> 
-        match Map.find x.args var with 
-        | Some _ -> true
-        | None -> false 
-        ) tracebacks 
-
-
 end
 
 
 
+
+(* ************************************************ *)
+(* Module PosCase: get traces of Positive TestCases *)
+(* ************************************************ *)
+
+
+module PosCase = struct
+  type posTraces = posTrace list 
+  and posTrace = PosTrace of { filename: identifier ; lineno: int }
+  let json2traces : Yojson.Basic.t -> variable -> posTraces 
+  = fun json (Var var) ->
+    let Meta meta = var.meta in 
+    member meta.filename json |> keys 
+    |> List.map ~f:(fun x -> PosTrace { filename = meta.filename ; lineno = Stdlib.int_of_string x }) 
+    
+
+    
+
+
+
+end
 
 
 
 (* ************ *)
 (* Module: SBFL *)
 (* ************ *)
+(* find suspicious line *)
 
 module SBFL = struct
 
-type line_num = int
-type weight = float
-type weighted_path = (line_num * weight) list
+  type lineno = int
+  type option = string
+  type poslines = lineno list
+  type neglines = lineno list
+  type weight = float
+  type weighted_path = (lineno * weight) list
+
+  let init_value = 1.0
+
+
+(* Function init_lines: initialize lines for SBFL *)
+  let rec init_lines : variable -> weighted_path
+  = fun var -> 
+    let func = load_func var in 
+    List.map func ~f:(fun stmt -> (get_lineno stmt, init_value))
+
+  (* Function load_func: load function to module in OCaml format *)
+  and load_func : variable -> stmt list
+  = fun (Var var) -> let (Meta meta) = var.meta in 
+  let pgm = TCon.filename2pgm meta.filename in
+  TCon.module2tracebacks pgm meta.classname meta.funcname
+
+    
+(* return line nubmer from statement *)
+  and get_lineno : stmt -> lineno 
+  = fun stmt -> 
+    match stmt with
+    | FunctionDef x -> x.attrs.lineno
+    | AsyncFunctionDef x -> x.attrs.lineno
+    | ClassDef x -> x.attrs.lineno
+    | Return x -> x.attrs.lineno
+    | Delete x -> x.attrs.lineno
+    | Assign x -> x.attrs.lineno
+    | AugAssign x -> x.attrs.lineno
+    | AnnAssign x -> x.attrs.lineno
+    | For x -> x.attrs.lineno
+    | AsyncFor x -> x.attrs.lineno
+    | While x -> x.attrs.lineno
+    | If x -> x.attrs.lineno
+    | With x -> x.attrs.lineno
+    | AsyncWith x -> x.attrs.lineno
+    | Match x -> x.attrs.lineno
+    | Raise x -> x.attrs.lineno
+    | Try x -> x.attrs.lineno
+    | Assert x -> x.attrs.lineno
+    | Import x -> x.attrs.lineno
+    | ImportFrom x -> x.attrs.lineno
+    | Global x -> x.attrs.lineno
+    | Nonlocal x -> x.attrs.lineno
+    | Expr x -> x.attrs.lineno
+    | Pass x -> x.attrs.lineno
+    | Break x -> x.attrs.lineno
+    | Continue x -> x.attrs.lineno
+
+
+  let linesNeg : Dynamic.tracebacks -> neglines
+  = fun tracebacks -> 
+    List.map ~f: (fun (Traceback x)-> x.lineno) tracebacks
+
+
+  let linesPos : PosCase.posTraces -> poslines
+  = fun poscase -> 
+    List.map ~f: (fun (PosTrace x) -> x.lineno) poscase
+
+
+  let rec get_susline : weighted_path -> neglines -> poslines -> lineno
+  = fun wpath neg pos -> 
+    let wpath = List.fold_left ~init:wpath ~f:(fun acc x -> (update_weight acc x "neg")) neg in
+    let (line, _) = List.fold_left ~init:wpath ~f:(fun acc x -> (update_weight acc x "pos")) pos 
+    |> List.sort ~compare:(fun (_, a) (_, b) -> Float.compare a b) |> List.rev 
+    |> List.hd_exn in line 
+
+
+  and update_weight: weighted_path -> lineno -> option -> weighted_path
+  = fun wpath lineno option -> 
+    match option with 
+    | "pos" -> let target, _ = List.find_exn wpath ~f:(fun (target, _) -> target = lineno) in
+    List.filter wpath ~f:(fun (line ,_) -> line <> target) |> List.cons (target, 0.0) 
+    | "neg" -> let target, weight = List.find_exn wpath ~f:(fun (target, _) -> target = lineno) in
+    List.filter wpath ~f:(fun (line, _) -> line <> target) |> List.cons (target, weight *. 1.05)
+    | _ -> raise (Failure "Wrong option error")
 
 
 
+end 
 
 
+type posSet = PosCase.posTraces * posType
+type negSet = Dynamic.tracebacks * negType
 
-
-
-
-
-end
+  let flocal : posSet -> negSet -> delta list
+  = fun (pTraces, pType) (nTraces, nType) -> 
+    let susVars = FuncLev.find_susFun pType nType in 
+    List.map susVars ~f: (fun var -> let lines = SBFL.init_lines var in let line = SBFL.get_susline lines (SBFL.linesNeg nTraces) (SBFL.linesPos pTraces) in
+    Delta { var = var ; lineno = line ; postype = pType ; negtype = nType })

@@ -50,18 +50,20 @@ and string2type : string -> var_type
   | "method" -> VMethod
   | x -> if Stdlib.String.starts_with ~prefix:"Dict" x then VDict else VClass x
 
-  and type2string : var_type -> string
-      = function 
-        | VInt -> "int"
-        | VFloat -> "float"
-        | VString -> "str"
-        | VBool -> "bool"
-        | VDict -> "Dict"
-        | VList -> "List"
-        | VClass x -> x
-        | VMethod -> "method"
-        | VNone -> "None"
-        | VEllipsis -> "..."
+and type2string : var_type -> string
+    = function 
+      | VInt -> "int"
+      | VFloat -> "float"
+      | VString -> "str"
+      | VBool -> "bool"
+      | VDict -> "Dict"
+      | VList -> "List"
+      | VClass x -> x
+      | VMethod -> "method"
+      | VNone -> "None"
+      | VEllipsis -> "..."
+
+
 let generate_varName : unit -> identifier
 = let varName_num = ref 0 in 
    fun () -> (varName_num := !varName_num + 1 ; ("t" ^ Int.to_string !varName_num))
@@ -108,7 +110,7 @@ module Dynamic = struct
   (* type candVars = var list *)
   type value = var_type list
   type posType = value Map.M (Var2valMap).t
-  type traceback = Traceback of {filename: string ; classname: identifier ; funcname: identifier ; line: int ; args: posType} 
+  type traceback = Traceback of {filename: string ; classname: identifier ; funcname: identifier ; lineno : int ; args: posType} 
   type tracebacks = traceback list
  
   
@@ -127,11 +129,13 @@ module Dynamic = struct
   let json2traceback: Yojson.Basic.t -> traceback
   = fun json -> 
     let filename = json |> member "info" |> member "filename" |> to_string in 
-    let classname = json |> member "info" |> member "classname" |> to_string in 
+    let classname = json |> member "info" |> member "classname" |> to_string in
+    let classname = if Stdlib.String.contains classname '.' then Stdlib.String.split_on_char '.' classname |> List.hd_exn 
+    else classname in 
     let funcname = json |> member "info" |> member "funcname" |> to_string in 
     let line = json |> member "info" |> member "line" |> to_int in
     let args = (json |> member "args" |> to_args) (Meta { filename = filename ; classname = classname ; funcname = funcname }) in 
-    Traceback {filename = filename ; classname = classname ; funcname = funcname ; line = line ; args = args}
+    Traceback {filename = filename ; classname = classname ; funcname = funcname ; lineno = line ; args = args}
 (* json2tracebacks: function that makes json file tracebacks(traceback list) *)
   let json2tracebacks : Yojson.Basic.t-> tracebacks
   = fun json -> to_list json |> List.map ~f: json2traceback
@@ -172,9 +176,11 @@ module TCon = struct
       begin   
         match pgm with 
           | Module _ -> generate_tCon_stmtS (module2tracebacks pgm tb.classname tb.funcname) (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname })@ generate_tCon tl
-          | Expression e -> generate_tCon_expr e.body (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname }) @ generate_tCon tl
+          (* | Expression e -> generate_tCon_expr e.body (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname }) @ generate_tCon tl *)
           | _ -> raise (Failure "not the program")
       end
+
+
 
    and filename2pgm : identifier -> pgm 
    = fun filename -> 
@@ -185,12 +191,21 @@ module TCon = struct
   and module2tracebacks : pgm -> identifier -> identifier -> stmt list 
   = fun pgm classname funcname -> 
       match pgm with 
-      | Module x -> List.filter ~f:(fun a -> isClassDef a classname) x.body |> List.filter ~f:(fun a -> isFuncDef a funcname)
+      | Module x -> 
+      (* let _ = List.map ~f:(fun x -> Stdio.print_endline (Pycaml.Ast2string.string_of_stmt 0 x)) x.body in  *)
+      if String.equal classname funcname then  List.filter ~f:(fun a -> isFuncDef a funcname) x.body
+      else 
+        begin
+          let classdefs =  
+          List.filter ~f:(fun a -> isClassDef a classname) x.body 
+          |> List.map ~f:(function ClassDef (classdef) -> classdef.body | _ -> []) |> List.concat in 
+          List.filter ~f:(fun a -> isFuncDef a funcname) classdefs 
+        end 
       | _ -> raise (Failure "Undefined Program")
 
   and isClassDef
-    = fun pgm classname ->
-      match pgm with 
+    = fun stmt classname ->
+      match stmt with 
       | ClassDef x -> if String.equal x.name classname then true else false 
       | _ -> false
 
@@ -203,6 +218,7 @@ module TCon = struct
 
 
 
+      
   (* generate_tCon_stmts: constraints generating function for statements *)
  and generate_tCon_stmtS : stmt list -> meta_data -> constraints
   = fun stmtS meta -> List.fold_left ~init:[] ~f: (fun acc x -> ((generate_tCon_stmt x meta) @ acc)) stmtS
@@ -378,8 +394,6 @@ module Print = struct
     print_type value) alist
 
   
-
-
   let print_traceback : Dynamic.traceback -> unit
   = fun traceback ->
     match traceback with 
@@ -388,7 +402,7 @@ module Print = struct
       Stdio.print_endline x.filename ;
       Stdio.print_endline x.classname ;
       Stdio.print_endline x.funcname ;
-      Stdlib.Printf.printf "%d\n" x.line ;
+      Stdlib.Printf.printf "%d\n" x.lineno ;
       print_args x.args
       
 
@@ -412,7 +426,6 @@ module TEnv = struct
  (* init_tEnv: function initializing type envrionment for static analysis *)
   let rec init_tEnv : variable -> Dynamic.posType -> tEnv
   = fun var tenv -> Map.set tenv ~key: var ~data: []
-
 
    (* Φ in PyTER *)  
    (* updating_tEnv: function that infers type of buggy variable with the information of constarints(i.e. constraints) *)
@@ -447,7 +460,6 @@ module TEnv = struct
       | List _ -> Map.update tenv var ~f:(fun values -> (VList :: Option.value ~default:[] values))
       | _ -> tenv
 
-
   and compVar : meta_data -> meta_data -> bool 
   = fun (Meta var) (Meta tcon) -> 
     (String.equal var.filename tcon.filename) && (String.equal var.classname tcon.classname) && (String.equal var.funcname tcon.funcname)
@@ -455,8 +467,6 @@ module TEnv = struct
   = fun name meta tenv -> 
     let tenv_list = Map.to_alist tenv in
     let (_, var)= List.find_exn tenv_list ~f:(fun ((Var var), _) -> compVar var.meta meta && String.equal var.name name) in var
-
-    
 
 (* dom_type: function that returns mode type in var_type list *)
   and dom_type : value -> value
@@ -469,7 +479,6 @@ module TEnv = struct
     let max = match List.hd ordered with Some (_ ,num) -> num | None -> 0 in 
     List.filter ~f: (fun(_,a) -> a = max) ordered
     |> List.map ~f: (fun (a, _) -> a)
-
 
 (* used in dom_type *)
 (* count_values: function counting the number of certain type "value" *)
@@ -486,23 +495,18 @@ end
 
 
 
-
-
-
-  let print_map : TEnv.tEnv -> unit
-  = fun tenv ->
-    let _ = Map.mapi tenv ~f:(fun ~key: (Var key) ~data: _ -> Stdio.print_string (key.name ^ " as " ^  key.alias ^ " ") ; 
-    Print.print_type (Map.find_exn tenv (Var key)) ; Stdio.print_endline "") in ()
-
-
-
+let print_map : TEnv.tEnv -> unit
+= fun tenv ->
+  let _ = Map.mapi tenv ~f:(fun ~key: (Var key) ~data: _ -> Stdio.print_string (key.name ^ " as " ^  key.alias ^ " ") ; 
+  Print.print_type (Map.find_exn tenv (Var key)) ; Stdio.print_endline "") in ()
 
 let anal : Yojson.Basic.t -> TEnv.tEnv
 = fun dynamic -> 
   let tracebacks = Dynamic.json2tracebacks dynamic in 
   let postypes = Dynamic.dynamicAnal tracebacks in
-  (* let () = Print.print_map postypes in *)
+  let () = print_map postypes in
   let constraints = TCon.generate_tCon tracebacks in
+  let _ = List.map ~f:(fun (Constraint x) -> (match x.expr with (a, b) -> (Stdio.print_endline ("(" ^ Pycaml.Ast2string.string_of_expr a ^ "," ^  Pycaml.Ast2string.string_of_expr b ^ ")")))) constraints in
   Map.mapi ~f: (fun ~key: var ~data: _ -> 
     (TEnv.init_tEnv var postypes 
   |> TEnv.updating_tEnv var constraints
