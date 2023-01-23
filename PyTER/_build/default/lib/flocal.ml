@@ -16,9 +16,12 @@ open Yojson.Basic.Util
 
 type posType = Dynamic.posType
 type negType = TEnv.tEnv
+type lineno = int 
+type linenos = lineno list
 
 (* (F, x, l, PostType, NegType) *)
-type delta = Delta of { var : variable ; lineno: int ; postype: posType ; negtype : negType }
+type delta = Delta of { var : variable ; linenos: linenos ; postype: posType ; negtype : negType }
+
 
 
 
@@ -105,7 +108,7 @@ module SBFL = struct
   type weight = float
   type weighted_path = (lineno * weight) list
 
-  let init_value = 1.0
+  let init_value = 0.0
 
 
 (* Function init_lines: initialize lines for SBFL *)
@@ -163,21 +166,21 @@ module SBFL = struct
     List.map ~f: (fun (PosTrace x) -> x.lineno) poscase
 
 
-  let rec get_susline : weighted_path -> neglines -> poslines -> lineno
+  let rec get_susline : weighted_path -> neglines -> poslines -> lineno list
   = fun wpath neg pos -> 
     let wpath = List.fold_left ~init:wpath ~f:(fun acc x -> (update_weight acc x "neg")) neg in
-    let (line, _) = List.fold_left ~init:wpath ~f:(fun acc x -> (update_weight acc x "pos")) pos 
-    |> List.sort ~compare:(fun (_, a) (_, b) -> Float.compare a b) |> List.rev 
-    |> List.hd_exn in line 
+    let lines = List.fold_left ~init:wpath ~f:(fun acc x -> (update_weight acc x "pos")) pos 
+    |> List.sort ~compare:(fun (_, a) (_, b) -> Float.compare a b) |> List.rev in 
+    let (_, max) = List.hd_exn lines in List.filter ~f:(fun (_, b) -> Float.equal b max) lines |> List.map ~f:(fun (a, _) -> a) 
 
 
   and update_weight: weighted_path -> lineno -> option -> weighted_path
   = fun wpath lineno option -> 
     match option with 
-    | "pos" -> let target, _ = List.find_exn wpath ~f:(fun (target, _) -> target = lineno) in
-    List.filter wpath ~f:(fun (line ,_) -> line <> target) |> List.cons (target, 0.0) 
-    | "neg" -> let target, weight = List.find_exn wpath ~f:(fun (target, _) -> target = lineno) in
-    List.filter wpath ~f:(fun (line, _) -> line <> target) |> List.cons (target, weight *. 1.05)
+    | "pos" -> let target, weight = List.find_exn wpath ~f:(fun (target, _) -> target = lineno) in
+    List.filter wpath ~f:(fun (line ,_) -> line <> target) |> List.cons (target, weight *. 0.01) 
+    | "neg" -> let target, _ = List.find_exn wpath ~f:(fun (target, _) -> target = lineno) in
+    List.filter wpath ~f:(fun (line, _) -> line <> target) |> List.cons (target, 1.0)
     | _ -> raise (Failure "Wrong option error")
 
 
@@ -192,4 +195,13 @@ type negSet = Dynamic.tracebacks * negType
   = fun (pTraces, pType) (nTraces, nType) -> 
     let susVars = FuncLev.find_susFun pType nType in 
     List.map susVars ~f: (fun var -> let lines = SBFL.init_lines var in let line = SBFL.get_susline lines (SBFL.linesNeg nTraces) (SBFL.linesPos pTraces) in
-    Delta { var = var ; lineno = line ; postype = pType ; negtype = nType })
+    Delta { var = var ; linenos = line ; postype = pType ; negtype = nType })
+
+
+
+
+
+
+
+
+

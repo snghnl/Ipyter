@@ -9,7 +9,7 @@ let json = Yojson.Basic.from_file filename
 
 let static = anal json 
 
-let () = print_map static
+let () = Stdio.print_endline "*****static*****" ; TEnv.print_map static
 
 
 

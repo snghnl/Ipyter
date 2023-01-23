@@ -412,6 +412,11 @@ module Print = struct
 
 
   end 
+
+
+
+
+
 (* ************************ *)
 (* Module: Type Environment *)
 (* ************************ *)
@@ -427,6 +432,14 @@ module TEnv = struct
   let rec init_tEnv : variable -> Dynamic.posType -> tEnv
   = fun var tenv -> Map.set tenv ~key: var ~data: []
 
+
+  and print_map : tEnv -> unit
+  = fun tenv ->
+    let _ = Map.mapi tenv ~f:(fun ~key: (Var key) ~data: _ -> Stdio.print_string (key.name ^ " as " ^  key.alias ^ " ") ; 
+    Print.print_type (Map.find_exn tenv (Var key)) ; Stdio.print_endline "") in ()
+
+
+
    (* Φ in PyTER *)  
    (* updating_tEnv: function that infers type of buggy variable with the information of constarints(i.e. constraints) *)
   and updating_tEnv : variable -> TCon.constraints -> tEnv -> tEnv
@@ -438,15 +451,20 @@ module TEnv = struct
         begin 
           match tcon.expr with 
           | Name x, Name y ->
+              let () = Stdio.print_endline "\n*****updating1*****\n" ; print_map tenv in 
               if String.equal x.id var.name && String.equal y.id var.name then updating_tEnv (Var var) tl tenv
-              else if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> (Option.value ~default: [] values) @ findVal y.id tcon.meta tenv)
+              else if String.equal x.id var.name then Map.update tenv (Var var) ~f:(fun values -> (Option.value ~default: [VEllipsis] values) @ findVal y.id tcon.meta tenv)
               |> updating_tEnv (Var var) tl 
-              else if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> (Option.value ~default: [] values) @ findVal x.id tcon.meta tenv)
+              else if String.equal y.id var.name then Map.update tenv (Var var) ~f:(fun values -> (Option.value ~default: [VEllipsis] values) @ findVal x.id tcon.meta tenv)
               |> updating_tEnv (Var var) tl 
                else updating_tEnv (Var var) tl tenv 
-          | Name x, y -> if String.equal x.id var.name then (updating_Name_with__ y (Var var) tenv) |> updating_tEnv (Var var) tl 
+          | Name x, y -> 
+              let () = Stdio.print_endline "\n*****upating2*****\n" ; print_map tenv in 
+            if String.equal x.id var.name then (updating_Name_with__ y (Var var) tenv) |> updating_tEnv (Var var) tl 
           else updating_tEnv (Var var) tl tenv
-          | x, Name y -> if String.equal y.id var.name then (updating_Name_with__ x (Var var) tenv) |> updating_tEnv (Var var) tl 
+          | x, Name y -> 
+              let () = Stdio.print_endline "\n*****updating3*****\n"  ; print_map tenv in 
+            if String.equal y.id var.name then (updating_Name_with__ x (Var var) tenv) |> updating_tEnv (Var var) tl 
           else updating_tEnv (Var var) tl tenv
           | _ -> updating_tEnv (Var var) tl tenv
         end 
@@ -495,20 +513,16 @@ end
 
 
 
-let print_map : TEnv.tEnv -> unit
-= fun tenv ->
-  let _ = Map.mapi tenv ~f:(fun ~key: (Var key) ~data: _ -> Stdio.print_string (key.name ^ " as " ^  key.alias ^ " ") ; 
-  Print.print_type (Map.find_exn tenv (Var key)) ; Stdio.print_endline "") in ()
 
 let anal : Yojson.Basic.t -> TEnv.tEnv
 = fun dynamic -> 
   let tracebacks = Dynamic.json2tracebacks dynamic in 
-  let postypes = Dynamic.dynamicAnal tracebacks in
-  let () = print_map postypes in
+  let negtype = Dynamic.dynamicAnal tracebacks in
+  let () = Stdio.print_endline "\n*****negtype*****\n" ; TEnv.print_map negtype in
   let constraints = TCon.generate_tCon tracebacks in
-  let _ = List.map ~f:(fun (Constraint x) -> (match x.expr with (a, b) -> (Stdio.print_endline ("(" ^ Pycaml.Ast2string.string_of_expr a ^ "," ^  Pycaml.Ast2string.string_of_expr b ^ ")")))) constraints in
+  let _ = Stdio.print_endline "\n*****constraints*****\n" ;  List.map ~f:(fun (Constraint x) -> (match x.expr with (a, b) -> (Stdio.print_endline ("(" ^ Pycaml.Ast2string.string_of_expr a ^ "," ^  Pycaml.Ast2string.string_of_expr b ^ ")")))) constraints in
   Map.mapi ~f: (fun ~key: var ~data: _ -> 
-    (TEnv.init_tEnv var postypes 
+    (TEnv.init_tEnv var negtype
   |> TEnv.updating_tEnv var constraints
   |> Map.find_exn) var
-  |> TEnv.dom_type) postypes
+  |> TEnv.dom_type) negtype
