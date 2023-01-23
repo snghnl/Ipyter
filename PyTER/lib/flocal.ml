@@ -2,25 +2,17 @@ open Static
 open Pycaml.Ast
 open Base
 open Yojson.Basic.Util
-(* open Util *)
-
-
-(* Flocal: Fault Localization *)
-(* Input: The result of static anal, dynamic anal *)
-(* 1. select suspicious variable by comparing static anal_ with dynamic anal_ *)
-(* 2. select suspicious function whose variable is suspicious variable *)
-(* 3. select suspicious line in the function by SBFL(Spectrum Based Fault Localization) *)
-(* Output: suspicious function F, suspicous line l, suspicious variable x, the result of static anal_(PosType), dynamic anal_(NegType) *)
 
 
 
-type posType = Dynamic.posType
-type negType = TEnv.tEnv
+type negType = NegType.negType
+type posType = TEnv.tEnv
 type lineno = int 
 type linenos = lineno list
 
 (* (F, x, l, PostType, NegType) *)
 type delta = Delta of { var : variable ; linenos: linenos ; postype: posType ; negtype : negType }
+
 
 
 
@@ -47,18 +39,16 @@ module VarSet = struct
 module FuncLev = struct
   
     type value = var_type list
-    type dynamic = value Map.M (Var2valMap).t
-    type static = value Map.M (Var2valMap).t
     type varSet = Set.M(VarSet).t
 
     (* find_susVar: function finding suspicious variable *)
-    let find_susFun : posType -> negType -> variable list 
-    = fun dynamic static -> 
-        let keys = Map.keys static in 
+    let find_susFun : negType -> posType -> variable list 
+    = fun negtype postype -> 
+        let keys = Map.keys postype in 
         let assoc = List.map ~f:(fun var ->
-          let dynamic_var = (Map.find_exn dynamic var |> Set.of_list (module VarSet)) in
-          let static_var = (Map.find_exn static var |> Set.of_list (module VarSet)) in
-          let diff = (Set.union (Set.diff static_var dynamic_var) (Set.diff dynamic_var static_var) 
+          let pos_var = (Map.find_exn negtype var |> Set.of_list (module VarSet)) in
+          let neg_var = (Map.find_exn postype var |> Set.of_list (module VarSet)) in
+          let diff = (Set.union (Set.diff pos_var neg_var) (Set.diff neg_var pos_var) 
           |> Set.length) in (var, diff)) keys in
           let ordered = List.sort ~compare: (fun (_,a) (_,b) -> a-b) assoc |> List.rev in 
 
@@ -74,22 +64,18 @@ end
 (* ************************************************ *)
 (* Module PosCase: get traces of Positive TestCases *)
 (* ************************************************ *)
-
+(* Does need dynamic Positive analysis result? *)
 
 module PosCase = struct
-  type posTraces = posTrace list 
-  and posTrace = PosTrace of { filename: identifier ; lineno: int }
-  let json2traces : Yojson.Basic.t -> variable -> posTraces 
+  type posCases = posCase list 
+  and posCase = PosTrace of { filename: identifier ; lineno: int }
+  let json2traces : Yojson.Basic.t -> variable -> posCases
   = fun json (Var var) ->
     let Meta meta = var.meta in 
     member meta.filename json |> keys 
-    |> List.map ~f:(fun x -> PosTrace { filename = meta.filename ; lineno = Stdlib.int_of_string x }) 
-    
+    |> List.map ~f:(fun x -> PosTrace { filename = meta.filename ; lineno = Stdlib.int_of_string x })
 
     
-
-
-
 end
 
 
@@ -156,12 +142,12 @@ module SBFL = struct
     | Continue x -> x.attrs.lineno
 
 
-  let linesNeg : Dynamic.tracebacks -> neglines
+  let linesNeg : NegType.tracebacks -> neglines
   = fun tracebacks -> 
     List.map ~f: (fun (Traceback x)-> x.lineno) tracebacks
 
 
-  let linesPos : PosCase.posTraces -> poslines
+  let linesPos : PosCase.posCases -> poslines
   = fun poscase -> 
     List.map ~f: (fun (PosTrace x) -> x.lineno) poscase
 
@@ -188,8 +174,8 @@ module SBFL = struct
 end 
 
 
-type posSet = PosCase.posTraces * posType
-type negSet = Dynamic.tracebacks * negType
+type posSet = PosCase.posCases * posType
+type negSet = NegType.tracebacks * negType
 
   let flocal : posSet -> negSet -> delta list
   = fun (pTraces, pType) (nTraces, nType) -> 

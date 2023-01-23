@@ -70,16 +70,9 @@ let generate_varName : unit -> identifier
 
 
 
-
-
-
-
 (* **************************** *)
 (* Module: Type Environment Map *)
 (* **************************** *)
-
-
-
 
 module Var2valMap = struct 
   module T = struct
@@ -101,21 +94,20 @@ end
 
 
 (* *************** *)
-(* Module: Dynamic *)
+(* Module: NegType *)
 (* *************** *)
 
-
-module Dynamic = struct
+module NegType = struct
   (* type var = identifier *)
   (* type candVars = var list *)
   type value = var_type list
-  type posType = value Map.M (Var2valMap).t
-  type traceback = Traceback of {filename: string ; classname: identifier ; funcname: identifier ; lineno : int ; args: posType} 
+  type negType = value Map.M (Var2valMap).t
+  type traceback = Traceback of {filename: string ; classname: identifier ; funcname: identifier ; lineno : int ; args: negType} 
   type tracebacks = traceback list
  
   
 
-  let to_args : Yojson.Basic.t -> meta_data -> posType 
+  let to_args : Yojson.Basic.t -> meta_data -> negType 
   = fun json meta -> 
     to_assoc json 
     |> List.map ~f: (fun (a, b) -> (Var{ name = a ; alias = generate_varName() ; meta = meta}, 
@@ -144,17 +136,11 @@ module Dynamic = struct
   (* let tracebacks2candvars : tracebacks -> candvars
   = fun tracebacks -> List.fold_left ~init:[] ~f:(fun acc (Traceback x) -> Map.keys x.args @ acc) tracebacks *)
 
-  let dynamicAnal : tracebacks -> posType
+  let dynamicAnal : tracebacks -> negType
   = fun tracebacks -> List.map ~f: (fun (Traceback x) -> Map.to_alist x.args) tracebacks 
     |> List.concat |> Map.of_alist_exn (module Var2valMap)
    
-
-
 end 
-
-
-
-
 
 
 (* ************************ *)
@@ -168,7 +154,7 @@ module TCon = struct
 
 
 
-  let rec generate_tCon : Dynamic.tracebacks -> constraints
+  let rec generate_tCon : NegType.tracebacks -> constraints
   = fun tracebacks -> 
       match tracebacks with 
       | [] -> []
@@ -216,8 +202,6 @@ module TCon = struct
       | _ -> false 
 
 
-
-
       
   (* generate_tCon_stmts: constraints generating function for statements *)
  and generate_tCon_stmtS : stmt list -> meta_data -> constraints
@@ -228,123 +212,68 @@ module TCon = struct
   and generate_tCon_stmt : stmt -> meta_data -> constraints
   = fun stmt meta -> 
     match stmt with
-    (* | FunctionDef of { name: identifier ; args : arguments ; body: stmt list ; decorator_list: expr list ; returns: expr option ; type_comment: string option; attrs: attributes } *)
     | FunctionDef x -> generate_tCon_stmtS x.body meta
-    (* | AsyncFunctionDef of { name: identifier; args: arguments; body: stmt list ; decorator_list: expr list; returns: expr option ; type_comment: string option ; attrs: attributes}  *)
     | AsyncFunctionDef x -> generate_tCon_stmtS x.body meta
-    (* | ClassDef of { name: identifier ; bases : expr list ; keywords: keyword list; body: stmt list; decorator_list: expr list; attrs: attributes} *)
     | ClassDef x -> generate_tCon_stmtS x.body meta
-    (* | Return of { value: expr option ; attrs: attributes } *)
     | Return x -> 
       begin 
         match x.value with 
         | None -> []
         | Some x' -> generate_tCon_expr x' meta 
       end 
-    (* | Delete of { targets : expr list ; attrs:attributes } *)
     | Delete _ -> []
-    (* | Assign of { targets: expr list; value: expr ; type_comment: string option ; attrs: attributes} *)
     | Assign x -> List.map x.targets ~f:(fun expr -> Constraint { expr = (expr, x.value) ; meta = meta })
-    (* | AugAssign of {target: expr ; op: operator ; value: expr ; attrs: attributes}  *)
     | AugAssign x -> [Constraint { expr = (x.target, x.value) ; meta = meta }]
-    (* | AnnAssign of {target: expr; annotation : expr; value: expr option ; simple : int ; attrs: attributes} *)
     | AnnAssign x -> [Constraint {expr = (x.target, x.annotation) ; meta = meta }]
-    (* | For of { target: expr ; iter: expr ; body: stmt list ; orelse: stmt list; type_comment: string option ; attrs : attributes}  *)
     | For x -> generate_tCon_stmtS x.body meta 
-    (* | AsyncFor of { target: expr ; iter: expr ; body: stmt list ; orelse: stmt list; type_comment: string option ; attrs: attributes} *)
     | AsyncFor x -> generate_tCon_stmtS x.body meta 
-    (* | While of { test: expr; body: stmt list ; orelse: stmt list ; attrs: attributes } *)
     | While x -> generate_tCon_stmtS x.body meta 
-    (* | If of { test: expr ; body: stmt list ; orelse : stmt list ; attrs: attributes } *)
     | If x -> generate_tCon_stmtS x.body meta @ generate_tCon_stmtS x.orelse meta 
-    (* | With of { items: withitem list ; body: stmt list ; type_comment: string option ; attrs: attributes } *)
     | With x -> generate_tCon_stmtS x.body meta 
-    (* | AsyncWith of { items: withitem list ; body: stmt list ; type_comment: string option ; attrs: attributes } *)
     | AsyncWith x ->  generate_tCon_stmtS x.body meta 
-    (* | Match of { subject: expr ; cases : match_case list ; attrs: attributes }  *)
     | Match _ -> []
-    (* | Raise of { exc: expr option ; cause : expr option ; attrs : attributes }  *)
     | Raise _ -> []
-    (* | Try of { body : stmt list ; handlers: excepthandler list ; orelse: stmt list ; finalbody: stmt list ; attrs: attributes } *)
     | Try x -> generate_tCon_stmtS x.body meta @ generate_tCon_stmtS x.orelse meta 
-     (* | Assert of { test: expr ; msg: expr option ; attrs: attributes } *)
     | Assert _ -> []
-    (* | Import of { names: alias list; attrs : attributes } *)
     | Import _ -> []
-    (* | ImportFrom of {modul: identifier option ; names: alias list ; level : int option ; attrs: attributes } *)
     | ImportFrom _ -> []
-    (* | Global of { names: identifier list ; attrs: attributes } *)
     | Global _ -> []
-    (* | Nonlocal of { names: identifier list ; attrs: attributes } *)
     | Nonlocal _ -> []
-    (* | Expr of { value : expr ; attrs: attributes} *)
     | Expr x -> generate_tCon_expr x.value meta
-    (* | Pass of { attrs: attributes } *)
     | Pass _ -> []
-    (* | Break of { attrs: attributes }  *)
     | Break _ -> []
-    (* | Continue of { attrs: attributes } *)
     | Continue _ -> []
 
 (* generate_tCon_expr: function generating constraints for expression *)
   and generate_tCon_expr : expr -> meta_data -> constraints
   = fun expr meta ->
       match expr with 
-          (* | BoolOp of { op: boolop ; values: expr list ; attrs: attributes } *)
-          (* and | or *)
           | BoolOp x -> iter_boolop x.values meta 
-          (* | NamedExpr of { target: expr ; value: expr ; attrs: attributes } *)
-          (* := *)
           | NamedExpr x -> [Constraint { expr = (x.target, x.value) ; meta = meta }]
-        (* | BinOp of { left: expr ; op: operator ; right: expr ; attrs: attributes } *)
           | BinOp x -> [Constraint {expr = (x.left, x.right) ; meta = meta }]
-          (* | UnaryOp of {op: unaryop ; operand: expr ; attrs: attributes } *)
           | UnaryOp _ -> []
-          (* | Lambda of { args: arguments ; body: expr ; attrs: attributes } *)
           | Lambda _ -> []
-          (* | IfExp of { test: expr; body:  expr; orelse: expr; attrs: attributes } *)
           | IfExp _ -> []
-          (* | Dict of { keys: (expr option) list ; values: expr list ; attrs: attributes } *)
           | Dict _ -> []
-          (* | Set of { elts: expr list ; attrs: attributes } *)
           | Set _ -> []
-          (* | ListComp of { elt: expr ; generators: comprehension list ; attrs: attributes } *)
           | ListComp _ -> []
-          (* | SetComp of { elt: expr ; generators: comprehension list ; attrs: attributes } *)
           | SetComp _ -> []
-          (* | DictComp of { key: expr ; value: expr ; generators: comprehension list ; attrs: attributes } *)
           | DictComp _ -> []
-          (* | GeneratorExp of { elt: expr ; generators: comprehension list ; attrs: attributes } *)
           | GeneratorExp _ -> []
-          (* | Await of { value: expr ; attrs: attributes } *)
           | Await _ -> []
-          (* | Yield of {value: expr option ; attrs: attributes } *)
           | Yield _ ->  []
-          (* | YieldFrom of { value: expr ; attrs: attributes }  *)
           | YieldFrom _ -> []
-          (* | Compare of { left: expr ; ops: cmpop list ; comparators: expr list ; attrs: attributes }  *)
           | Compare _ -> []
-          (* | Call of { func: expr ; args: expr list ; keywords: keyword list ; attrs: attributes } *)
           | Call x -> List.fold_left ~init:[] ~f:(fun acc x -> (generate_tCon_expr x meta) @ acc) x.args
-          (* | FormattedValue of { value: expr ; conversion: int ; format_spec: expr option ; attrs: attributes } *)
           | FormattedValue _ -> []
-          (* | JoinedStr of { values: expr list ; attrs: attributes } *)
           | JoinedStr _ -> []
-          (* | Constant of { value: constant ; kind: string option ; attrs: attributes } *)
           | Constant _ -> [] 
-          (* | Attribute of { value: expr ; attr: identifier ; ctx: expr_context ; attrs: attributes } *)
           | Attribute _ -> []
-          (* | Subscript of { value: expr ; slice: expr ; ctx: expr_context ; attrs: attributes } *)
           | Subscript _ -> []
-          (* | Starred of { value: expr ; ctx: expr_context ; attrs: attributes } *)
           | Starred _ -> []
-          (* | Name of { id: identifier ; ctx: expr_context ; attrs: attributes } *)
           | Name _ -> []
-          (* | List of { elts: expr list ; ctx: expr_context ; attrs: attributes }  *)
           | List _ -> []
-          (* | Tuple of { elts: expr list ; ctx: expr_context ; attrs: attributes } *)
           | Tuple _ -> [] 
-          (* | Slice of { lower: expr option ; upper: expr option ; step: expr option ; attrs: attributes } *)
           | Slice _ -> []
 
   
@@ -394,7 +323,7 @@ module Print = struct
     print_type value) alist
 
   
-  let print_traceback : Dynamic.traceback -> unit
+  let print_traceback : NegType.traceback -> unit
   = fun traceback ->
     match traceback with 
     | Traceback x -> 
@@ -407,7 +336,7 @@ module Print = struct
       
 
 
-  let print_tracebacks : Dynamic.tracebacks -> unit
+  let print_tracebacks : NegType.tracebacks -> unit
   = fun tracebacks -> List.fold_left ~init:() ~f:(fun _ x -> print_traceback x) tracebacks
 
 
@@ -429,7 +358,7 @@ module TEnv = struct
 
  (* Λ^{init} in PyTER *)
  (* init_tEnv: function initializing type envrionment for static analysis *)
-  let rec init_tEnv : variable -> Dynamic.posType -> tEnv
+  let rec init_tEnv : variable -> NegType.negType -> tEnv
   = fun var tenv -> Map.set tenv ~key: var ~data: []
 
 
@@ -516,8 +445,8 @@ end
 
 let anal : Yojson.Basic.t -> TEnv.tEnv
 = fun dynamic -> 
-  let tracebacks = Dynamic.json2tracebacks dynamic in 
-  let negtype = Dynamic.dynamicAnal tracebacks in
+  let tracebacks = NegType.json2tracebacks dynamic in 
+  let negtype = NegType.dynamicAnal tracebacks in
   let () = Stdio.print_endline "\n*****negtype*****\n" ; TEnv.print_map negtype in(* Print for test *)
   let constraints = TCon.generate_tCon tracebacks in
   let _ = Stdio.print_endline "\n*****constraints*****\n" ;  List.map ~f:(fun (Constraint x) -> (match x.expr with (a, b) -> (Stdio.print_endline ("(" ^ Pycaml.Ast2string.string_of_expr a ^ "," ^  Pycaml.Ast2string.string_of_expr b ^ ")")))) constraints in(* Print for test *)
