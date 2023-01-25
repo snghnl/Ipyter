@@ -106,7 +106,7 @@ module SBFL = struct
   (* Function load_func: load function to module in OCaml format *)
   and load_func : variable -> stmt list
   = fun (Var var) -> let (Meta meta) = var.meta in 
-  let pgm = TCon.filename2pgm meta.filename in
+  let pgm = filename2pgm meta.filename in
   TCon.module2tracebacks pgm meta.classname meta.funcname
 
     
@@ -142,16 +142,19 @@ module SBFL = struct
     | Continue x -> x.attrs.lineno
 
 
+  (* get lines from neg test cases *)
   let linesNeg : NegType.tracebacks -> neglines
   = fun tracebacks -> 
     List.map ~f: (fun (Traceback x)-> x.lineno) tracebacks
 
-
+  (* get lines from pos test cases *)
   let linesPos : PosCase.posCases -> poslines
   = fun poscase -> 
     List.map ~f: (fun (PosTrace x) -> x.lineno) poscase
 
 
+  
+  (* get suspicous lines *) 
   let rec get_susline : weighted_path -> neglines -> poslines -> lineno list
   = fun wpath neg pos -> 
     let wpath = List.fold_left ~init:wpath ~f:(fun acc x -> (update_weight acc x "neg")) neg in
@@ -159,7 +162,10 @@ module SBFL = struct
     |> List.sort ~compare:(fun (_, a) (_, b) -> Float.compare a b) |> List.rev in 
     let (_, max) = List.hd_exn lines in List.filter ~f:(fun (_, b) -> Float.equal b max) lines |> List.map ~f:(fun (a, _) -> a) 
 
-
+  (* used in get_susline *)
+  (* gives weight to lines *)
+  (* by pos test case: *. 0.01 *)
+  (* by neg test case: 1 *)
   and update_weight: weighted_path -> lineno -> option -> weighted_path
   = fun wpath lineno option -> 
     match option with 

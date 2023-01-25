@@ -7,7 +7,7 @@
                 {
                     "_type": "Assign",
                     "col_offset": 4,
-                    "end_col_offset": 17,
+                    "end_col_offset": 20,
                     "end_lineno": 2,
                     "lineno": 2,
                     "targets": [
@@ -17,28 +17,37 @@
                             "ctx": {
                                 "_type": "Store"
                             },
-                            "end_col_offset": 10,
+                            "end_col_offset": 12,
                             "end_lineno": 2,
-                            "id": "susvar",
+                            "id": "sus_varA",
                             "lineno": 2
                         }
                     ],
                     "type_comment": null,
                     "value": {
-                        "_type": "Name",
-                        "col_offset": 13,
-                        "ctx": {
-                            "_type": "Load"
-                        },
-                        "end_col_offset": 17,
+                        "_type": "Call",
+                        "args": [],
+                        "col_offset": 15,
+                        "end_col_offset": 20,
                         "end_lineno": 2,
-                        "id": "cast",
+                        "func": {
+                            "_type": "Name",
+                            "col_offset": 15,
+                            "ctx": {
+                                "_type": "Load"
+                            },
+                            "end_col_offset": 18,
+                            "end_lineno": 2,
+                            "id": "int",
+                            "lineno": 2
+                        },
+                        "keywords": [],
                         "lineno": 2
                     }
                 }
             ],
             "col_offset": 0,
-            "end_col_offset": 17,
+            "end_col_offset": 20,
             "end_lineno": 2,
             "lineno": 1,
             "orelse": [],
@@ -51,25 +60,25 @@
                         "ctx": {
                             "_type": "Load"
                         },
-                        "end_col_offset": 20,
+                        "end_col_offset": 21,
                         "end_lineno": 1,
-                        "id": "susvar",
+                        "id": "sus_var",
                         "lineno": 1
                     },
                     {
                         "_type": "Name",
-                        "col_offset": 22,
+                        "col_offset": 23,
                         "ctx": {
                             "_type": "Load"
                         },
-                        "end_col_offset": 25,
+                        "end_col_offset": 26,
                         "end_lineno": 1,
-                        "id": "neg",
+                        "id": "int",
                         "lineno": 1
                     }
                 ],
                 "col_offset": 3,
-                "end_col_offset": 26,
+                "end_col_offset": 27,
                 "end_lineno": 1,
                 "func": {
                     "_type": "Name",
@@ -84,6 +93,45 @@
                 },
                 "keywords": [],
                 "lineno": 1
+            }
+        },
+        {
+            "_type": "Return",
+            "col_offset": 0,
+            "end_col_offset": 12,
+            "end_lineno": 3,
+            "lineno": 3,
+            "value": {
+                "_type": "BinOp",
+                "col_offset": 7,
+                "end_col_offset": 12,
+                "end_lineno": 3,
+                "left": {
+                    "_type": "Name",
+                    "col_offset": 7,
+                    "ctx": {
+                        "_type": "Load"
+                    },
+                    "end_col_offset": 8,
+                    "end_lineno": 3,
+                    "id": "x",
+                    "lineno": 3
+                },
+                "lineno": 3,
+                "op": {
+                    "_type": "Add"
+                },
+                "right": {
+                    "_type": "Name",
+                    "col_offset": 11,
+                    "ctx": {
+                        "_type": "Load"
+                    },
+                    "end_col_offset": 12,
+                    "end_lineno": 3,
+                    "id": "y",
+                    "lineno": 3
+                }
             }
         }
     ],

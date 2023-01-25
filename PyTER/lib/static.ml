@@ -5,7 +5,7 @@ open Pycaml
 
 
 
-type pgm = modul 
+type pgm = Module of modul | None  
 
 (* member "alias" for differentiating same-named variables *)
 type variable = Var of { name : identifier ; alias: identifier ; meta: meta_data }
@@ -69,6 +69,15 @@ let generate_varName : unit -> identifier
    fun () -> (varName_num := !varName_num + 1 ; ("t" ^ Int.to_string !varName_num))
 
 
+let filename2pgm : identifier -> stmt list
+= fun filename -> 
+(* link to file *)
+  let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py " ^ filename ^ " > /tmp/pgm.json") in 
+    let json = Yojson.Basic.from_file "/tmp/pgm.json" in 
+      let modul = Json2ast.to_module json in 
+        match modul with 
+        | Module x -> x.body
+        | _ -> raise (Failure "Undefined Program")
 
 (* **************************** *)
 (* Module: Type Environment Map *)
@@ -159,35 +168,21 @@ module TCon = struct
       match tracebacks with 
       | [] -> []
       | Traceback tb :: tl -> let pgm = filename2pgm tb.filename in 
-      begin   
-        match pgm with 
-          | Module _ -> generate_tCon_stmtS (module2tracebacks pgm tb.classname tb.funcname) (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname })@ generate_tCon tl
-          (* | Expression e -> generate_tCon_expr e.body (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname }) @ generate_tCon tl *)
-          | _ -> raise (Failure "not the program")
-      end
+          generate_tCon_stmtS (module2tracebacks pgm tb.classname tb.funcname) (Meta {filename = tb.filename ; classname = tb.classname ; funcname = tb.funcname }) @ generate_tCon tl
 
 
 
-   and filename2pgm : identifier -> pgm 
-   = fun filename -> 
-    (* link to file *)
-      let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py " ^ filename ^ " > /tmp/traceback.json") in 
-        let json = Yojson.Basic.from_file "/tmp/traceback.json" in Json2ast.to_module json 
 
-  and module2tracebacks : pgm -> identifier -> identifier -> stmt list 
+  and module2tracebacks : stmt list -> identifier -> identifier -> stmt list 
   = fun pgm classname funcname -> 
-      match pgm with 
-      | Module x -> 
-      (* let _ = List.map ~f:(fun x -> Stdio.print_endline (Pycaml.Ast2string.string_of_stmt 0 x)) x.body in  *)
-      if String.equal classname funcname then  List.filter ~f:(fun a -> isFuncDef a funcname) x.body
+      if String.equal classname funcname then  List.filter ~f:(fun a -> isFuncDef a funcname) pgm
       else 
         begin
           let classdefs =  
-          List.filter ~f:(fun a -> isClassDef a classname) x.body 
+          List.filter ~f:(fun a -> isClassDef a classname) pgm
           |> List.map ~f:(function ClassDef (classdef) -> classdef.body | _ -> []) |> List.concat in 
           List.filter ~f:(fun a -> isFuncDef a funcname) classdefs 
         end 
-      | _ -> raise (Failure "Undefined Program")
 
   and isClassDef
     = fun stmt classname ->

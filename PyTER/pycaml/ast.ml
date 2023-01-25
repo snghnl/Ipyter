@@ -19,7 +19,7 @@ type modul =
   | Expression of {body : expr} 
   | FunctionType of { argtypes: expr list ; returns : expr } 
 
-and attributes = { lineno: int ; col_offset: int ; end_lineno: int option ; end_col_offset: int option} 
+and attributes = { mutable lineno: int ; col_offset: int ; end_lineno: int option ; end_col_offset: int option} 
 
 and stmt = 
   | FunctionDef of { name: identifier ; args : arguments ; body: stmt list ; decorator_list: expr list ; returns: expr option ; type_comment: string option; attrs: attributes }
