@@ -2,6 +2,7 @@ open Static
 open Flocal
 open Pycaml.Ast
 open Base
+open Pycaml
 
 
 
@@ -64,14 +65,17 @@ module Templates = struct
     | Continue x -> x.attrs.lineno <- x.attrs.lineno + num 
 
 
-
-  let rec insert_stmt : stmt list -> stmt -> lineno -> stmt list 
-  = fun pgm stmt lineno -> 
+  (* insert statement into buggy code *)
+  let rec insert_stmt : stmt list -> lineno -> stmt -> stmt list 
+  = fun pgm lineno stmt -> 
     match pgm with 
     | [] -> [] 
     | hd :: tl -> if SBFL.get_lineno hd < lineno then hd :: stmt :: tl 
-    else hd :: insert_stmt tl stmt lineno 
+    else hd :: insert_stmt tl lineno stmt 
+   
     
+  
+    (* get_col_offset: get col_offset of statement *)
   let get_col_offset 
   = fun stmt -> 
     match stmt with  
@@ -103,58 +107,113 @@ module Templates = struct
     | Continue x -> x.attrs.col_offset
 
 
+  
+  (* coordinate_line: coordinate "line number" and "col_offset" before insert template code into buggy code*) 
+  let coordinate_line stmt ~lineno ~col_offset 
+  = match stmt with
+    | FunctionDef x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | AsyncFunctionDef x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | ClassDef x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Return x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Delete x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Assign x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | AugAssign x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | AnnAssign x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | For x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | AsyncFor x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | While x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | If x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | With x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | AsyncWith x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Match x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Raise x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Try x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Assert x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Import x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | ImportFrom x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Global x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Nonlocal x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Expr x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Pass x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Break x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+    | Continue x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset ; stmt
+
+
+
+  let string2ast : string -> modul 
+  = fun str -> 
+    let _ = Stdlib.Sys.command("echo " ^ str ^ " >> /tmp/pycode.py | python3.10 pycaml/ast2json.py > /tmp/linecode.json" ) in
+    Yojson.Basic.from_file "/tmp/linecode.json" |> Json2ast.to_module
+
+  let tests : modul -> bool 
+  = fun _ -> true 
+  (* TODO *)
+    
+    
 
 
   module TypeCasting = struct 
 
 
       
-    let rec negTypeCasting_N_Test cast_holes code (Meta meta) =  
+    let rec negTypeCasting_N_Test cast_holes code lineno col_offset (Meta meta) =  
       let pgm = filename2pgm meta.filename in 
         match cast_holes with 
         | [] -> None 
-        | hd :: tl -> let patch_code = code ^ hd in 
-          let _ = Stdlib.Sys.command("echo " ^ patch_code ^ " >> /tmp/pycode.py | python3.10 pycaml/ast2json.py > /tmp/linecode.json" ) in
-            let json = Yojson.Basic.from_file "/tmp/linecode.json" in 
-            let modul = Json2ast.to_module json in 
+        | hd :: tl -> let typecheckCode = code ^ hd ^ "\n" in 
+        let modul = string2ast typecheckCode in 
               begin 
               match modul with 
-              | Module x -> x.body |> List.hd_exn
+              | Module x -> 
+              let patched_code_body = x.body |> List.hd_exn |> coordinate_line ~lineno: lineno ~col_offset:col_offset |> insert_stmt pgm lineno in 
+              let patched_code = Module { body = patched_code_body ; type_ignores = [] } in
+              if tests patched_code then Program patched_code else negTypeCasting_N_Test tl code lineno col_offset (Meta meta)
               | _ -> raise (Failure "Undefined line") 
               end
 
+
+
           
-
-
-
-
-
-
-
-
     let negTypeCasting pgm (Delta delta, (lineno, NegTypeCasting stmt)) = 
       let Var var = delta.var in 
+      let col_offset = get_col_offset stmt in 
       let () = update_lineno pgm lineno 1 in
       let sus_var = var.name in  
       let neg_hole = Map.find_exn delta.negtype (Var var) |> List.hd_exn |> type2string in
       let cast_hole = Map.find_exn delta.postype (Var var) |> List.map ~f:(type2string) in
-      let patch_code = "if isinstance (" ^ sus_var ^ ", " ^ neg_hole ^ ") : " ^ sus_var ^ " = " in
-        negTypeCasting_N_Test cast_hole patch_code var.meta
+      let typecheckCode = "if isinstance (" ^ sus_var ^ ", " ^ neg_hole ^ ") : " ^ sus_var ^ " = " in
+        negTypeCasting_N_Test cast_hole typecheckCode lineno col_offset var.meta
 
       
 
-
- 
 
 
 
 
         
     
-      
+    let posTypeCasting_N_Test hole typecheckCode lineno col_offset (Meta meta)   
+    =  let pgm = filename2pgm meta.filename in 
+        match hole with 
+        | [] -> None
+        | hd :: tl -> let typecheckCode = typecheckCode ^ hd ^ ") : " ^ susvar ^ " = " ^ hd ^ "\n" in  
+          let modul = string2ast typecheckCode in 
+
+
       
   
-    let posTypeCasting (Delta delta, lineno) = 
+    let posTypeCasting pgm (Delta delta, (lineno, PosTypeCasting stmt)) =  
+      let Var var = delta.var in 
+      let col_offset = get_col_offset stmt in 
+      let () = update_lineno 1 in  
+      let sus_var = var.name in
+      let hole = Map.find_exn delta.postype (Var var) |> List.map ~f:(type2string) in 
+      let typecheckCode = "if not isinstance(" ^ sus_var ^ ", " in 
+        posTypeCasting_N_Test hole typecheckCode lineno col_offset var.meta
+
+
+    
+      
     let typeCastingExpr (Delta delta, lineno) = 
 
 
@@ -223,9 +282,6 @@ module Templates = struct
     List.map target_stmts ~f:(mapTemplates (Delta delta)) 
 
   (* function tests: test whether the patched program passes test cases or not  *)
-  let tests : modul -> bool 
-  = fun modul -> 
-
 
 
   let patch_template
@@ -251,7 +307,7 @@ module Templates = struct
     | hd :: tl -> 
       begin 
         match patch_template (Delta delta, (lineno, hd)) with 
-        | Module x -> Module x
+        | Program x -> x
         | None -> patch_templates (Delta delta, (lineno, tl))
       end 
 

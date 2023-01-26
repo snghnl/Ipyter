@@ -2,6 +2,7 @@ open Static
 open Flocal
 open Pycaml.Ast
 open Base
+open Pycaml
 
 
 
@@ -65,8 +66,8 @@ module Templates = struct
 
 
 
-  let rec insert_stmt : stmt list -> stmt -> lineno -> stmt list 
-  = fun pgm stmt lineno -> 
+  let rec insert_stmt : stmt list -> stmt -> lineno -> lineno ->  stmt list 
+  = fun pgm stmt lineno col_offset -> 
     match pgm with 
     | [] -> [] 
     | hd :: tl -> if SBFL.get_lineno hd < lineno then hd :: stmt :: tl 
@@ -102,53 +103,69 @@ module Templates = struct
     | Break x -> x.attrs.col_offset
     | Continue x -> x.attrs.col_offset
 
+  let coordinate_line stmt lineno col_offset 
+  = match stmt with
+    | FunctionDef x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | AsyncFunctionDef x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | ClassDef x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Return x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Delete x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Assign x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | AugAssign x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | AnnAssign x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | For x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | AsyncFor x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | While x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | If x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | With x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | AsyncWith x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Match x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Raise x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Try x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Assert x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Import x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | ImportFrom x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Global x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Nonlocal x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Expr x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Pass x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Break x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
+    | Continue x -> x.attrs.lineno <- lineno ; x.attrs.col_offset <- col_offset 
 
 
-  (* let ast_isinstance sus_var hole lineno col_offset = 
-    let func = Name { id = "isinstance" ; ctx = Load ; attrs = { lineno = lineno ; col_offset = col_offset + 3 ; end_lineno = Some lineno ; end_col_offset = Some (col_offset + 3 + (String.length "isinstace"))}} in
-    let args = [ Name { id = sus_var ; ctx = Load ; attrs = { lineno = lineno ; col_offset = col_offset + 3 + (String.length "isinstance") ; end_lineno = Some lineno ; end_col_offset = Some (col_offset + 3 + (String.length "isinstance") + String.length sus_var) }}
-                 ; Name {id = hole ; ctx = Load ; attrs = {lineno = lineno ; col_offset = col_offset + 3 + (String.)}} 
-               ] in 
-    let keywords = [] in 
-    let attrs = { lineno = lineno ; col_offset = col_offset ; end_lineno = None ; end_col_offset = None} in 
-    Call { func = func ; args = args ; keywords = keywords ; attrs = attrs } *)
 
   module TypeCasting = struct 
 
-    (* let ast_assign sus_var cast_hole lineno col_offset =
-      let targets = [ Name { id = sus_var ; ctx = Store ; attrs = {(* TODO *)}} ]
-      let value = Name {id = cast_hole ; ctx = Load ; attrs = {(* TODO *)}} 
-      let type_comment = None
-      let attrs =  
-      in Assign { targets = targest ; value = value ; type_comment = type_comment ; attrs = attrs } *)
 
       
-    let rec negTypeCasting_N_Test cast_holes code meta =  
+    let rec negTypeCasting_N_Test cast_holes code (Meta meta) =  
       let pgm = filename2pgm meta.filename in 
         match cast_holes with 
         | [] -> None 
-        | hd :: tl -> let patch_code = code ^ hd in filename2pgm
+        | hd :: tl -> let patch_code = code ^ hd in 
+          let _ = Stdlib.Sys.command("echo " ^ patch_code ^ " >> /tmp/pycode.py | python3.10 pycaml/ast2json.py > /tmp/linecode.json" ) in
+            let json = Yojson.Basic.from_file "/tmp/linecode.json" in 
+              let modul = Json2ast.to_module json in 
+              begin 
+              match modul with 
+              | Module x -> x.body |> List.hd_exn |> coordinate_line |> insert_code
+              | _ -> raise (Failure "Undefined line") 
+              end
 
-
-
-
-
+          
     let negTypeCasting pgm (Delta delta, (lineno, NegTypeCasting stmt)) = 
       let Var var = delta.var in 
-      let Meta meta = var.meta in
       let () = update_lineno pgm lineno 1 in
       let sus_var = var.name in  
       let neg_hole = Map.find_exn delta.negtype (Var var) |> List.hd_exn |> type2string in
       let cast_hole = Map.find_exn delta.postype (Var var) |> List.map ~f:(type2string) in
       let patch_code = "if isinstance (" ^ sus_var ^ ", " ^ neg_hole ^ ") : " ^ sus_var ^ " = " in
-        negTypeCasting_N_Test cast_hole patch_code 
+        negTypeCasting_N_Test cast_hole patch_code var.meta
 
       
 
 
  
-
-
 
 
         

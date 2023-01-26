@@ -2,10 +2,11 @@ open Pycaml.Ast
 open Base
 open Yojson.Basic.Util 
 open Pycaml
+open Core
 
 
 
-type pgm = Module of modul | None  
+type pgm = Program of modul | None  
 
 (* member "alias" for differentiating same-named variables *)
 type variable = Var of { name : identifier ; alias: identifier ; meta: meta_data }

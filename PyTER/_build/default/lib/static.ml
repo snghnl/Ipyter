@@ -2,6 +2,7 @@ open Pycaml.Ast
 open Base
 open Yojson.Basic.Util 
 open Pycaml
+open Core
 
 
 
@@ -72,8 +73,8 @@ let generate_varName : unit -> identifier
 let filename2pgm : identifier -> stmt list
 = fun filename -> 
 (* link to file *)
-  let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py " ^ filename ^ " > /tmp/traceback.json") in 
-    let json = Yojson.Basic.from_file "/tmp/traceback.json" in 
+  let _ = Stdlib.Sys.command ("python3.10 pycaml/ast2json.py " ^ filename ^ " > /tmp/pgm.json") in 
+    let json = Yojson.Basic.from_file "/tmp/pgm.json" in 
       let modul = Json2ast.to_module json in 
         match modul with 
         | Module x -> x.body
